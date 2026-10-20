@@ -48,7 +48,24 @@ public partial class MainWindow : Window
         InitializeComponent();
 
         _settings = AppSettings.Load();
+        _settings.ScrcpyDir = ResolveScrcpyDir(_settings.ScrcpyDir);
         _adb = new AdbService(_settings.ScrcpyDir);
+        if (string.IsNullOrEmpty(_settings.ScrcpyDir))
+        {
+            AppendLog("⚠ 未找到 scrcpy 目录，请在「设备」页手动选择");
+            try
+            {
+                File.AppendAllText(Path.Combine(GetAppDir(), "startup.log"),
+                    string.Format("{0:yyyy-MM-dd HH:mm:ss} processPath={1} appDir={2} baseDir={3}\n",
+                        DateTime.Now, Environment.ProcessPath, GetAppDir(), AppContext.BaseDirectory));
+            }
+            catch { }
+        }
+        else
+        {
+            AppendLog("scrcpy 目录: " + _settings.ScrcpyDir);
+            _settings.Save();
+        }
 
         _runner.Log += AppendLog;
         _runner.Exited += OnScrcpyExited;
@@ -181,6 +198,23 @@ public partial class MainWindow : Window
 
     // ---------------- scrcpy 目录自动探测 ----------------
 
+    /// <summary>单文件发布时 AppContext.BaseDirectory 不可靠，优先用 ProcessPath 的目录</summary>
+    private static string GetAppDir()
+    {
+        try
+        {
+            var p = Environment.ProcessPath;
+            if (!string.IsNullOrEmpty(p))
+            {
+                var d = Path.GetDirectoryName(p);
+                if (!string.IsNullOrEmpty(d)) return d;
+            }
+        }
+        catch { }
+        try { return AppContext.BaseDirectory; } catch { }
+        return Environment.CurrentDirectory;
+    }
+
     private static string ResolveScrcpyDir(string configured)
     {
         bool HasScrcpy(string dir) =>
@@ -188,11 +222,15 @@ public partial class MainWindow : Window
 
         if (HasScrcpy(configured)) return configured;
 
+        var appDir = GetAppDir();
         var candidates = new[]
         {
-            Path.Combine(AppContext.BaseDirectory, "scrcpy"),
+            Path.Combine(appDir, "scrcpy"),
+            appDir,
+            Path.Combine(appDir, "..", "scrcpy"),
+            Path.Combine(appDir, "..", "..", "scrcpy"),
             AppContext.BaseDirectory,
-            Path.Combine(AppContext.BaseDirectory, "..", "scrcpy"),
+            Path.Combine(AppContext.BaseDirectory, "scrcpy"),
             @"D:\工具\scrcpy-win64-v3.3.4",
             @"C:\scrcpy",
         };
@@ -255,7 +293,15 @@ public partial class MainWindow : Window
 
             if (items.Count == 0)
             {
-                LblStatus.Text = "未发现设备";
+                if (!string.IsNullOrEmpty(_adb.LastError))
+                {
+                    LblStatus.Text = "adb 错误：请检查 scrcpy 目录";
+                    AppendLog("adb 错误: " + _adb.LastError);
+                }
+                else
+                {
+                    LblStatus.Text = "未发现设备";
+                }
             }
             else
             {

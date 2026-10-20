@@ -6,10 +6,16 @@
 
 *Boss incoming? One key, and it''s gone.*
 
-![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11-blue)
-![.NET](https://img.shields.io/badge/.NET-8.0-512BD4)
-![scrcpy](https://img.shields.io/badge/powered%20by-scrcpy%203.3.4-orange)
-![License](https://img.shields.io/badge/license-MIT-green)
+[![Stars](https://img.shields.io/github/stars/lee19890505/moyucast?style=flat-square&color=yellow)](https://github.com/lee19890505/moyucast/stargazers)
+[![Downloads](https://img.shields.io/github/downloads/lee19890505/moyucast/total?style=flat-square&color=brightgreen)](https://github.com/lee19890505/moyucast/releases)
+[![Release](https://img.shields.io/github/v/release/lee19890505/moyucast?style=flat-square&color=blue)](https://github.com/lee19890505/moyucast/releases/latest)
+[![Issues](https://img.shields.io/github/issues/lee19890505/moyucast?style=flat-square)](https://github.com/lee19890505/moyucast/issues)
+[![Last commit](https://img.shields.io/github/last-commit/lee19890505/moyucast?style=flat-square)](https://github.com/lee19890505/moyucast/commits/main)
+[![License](https://img.shields.io/github/license/lee19890505/moyucast?style=flat-square&color=green)](LICENSE)
+
+![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11-blue?style=flat-square)
+![.NET](https://img.shields.io/badge/.NET-8.0-512BD4?style=flat-square)
+![scrcpy](https://img.shields.io/badge/powered%20by-scrcpy%203.3.4-orange?style=flat-square)
 
 [🇨🇳 中文](#-中文) · [🇬🇧 English](#-english)
 
@@ -36,7 +42,12 @@
 ## 界面预览
 
 <p align="center">
-  <img src="docs/screenshots/main.png" width="55%" alt="主界面" />
+  <img src="docs/screenshots/device.png" width="30%" alt="设备页" />
+  <img src="docs/screenshots/display.png" width="30%" alt="画面页" />
+  <img src="docs/screenshots/appearance.png" width="30%" alt="外观页" />
+</p>
+<p align="center">
+  <img src="docs/screenshots/mirror.png" width="34%" alt="投屏窗口" />
 </p>
 
 ## 为什么不用原版 scrcpy
@@ -204,7 +215,12 @@ Press it again and everything comes back exactly as it was: same size, same posi
 ## Screenshots
 
 <p align="center">
-  <img src="docs/screenshots/main.png" width="55%" alt="Main window" />
+  <img src="docs/screenshots/device.png" width="30%" alt="Device tab" />
+  <img src="docs/screenshots/display.png" width="30%" alt="Display tab" />
+  <img src="docs/screenshots/appearance.png" width="30%" alt="Appearance tab" />
+</p>
+<p align="center">
+  <img src="docs/screenshots/mirror.png" width="34%" alt="Mirror window" />
 </p>
 
 ## Why not plain scrcpy

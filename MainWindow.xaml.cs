@@ -235,8 +235,9 @@ public partial class MainWindow : Window
     }
     // ---------------- 设备 ----------------
 
-    private async Task RefreshDevicesAsync()
+    private async Task<int> RefreshDevicesAsync()
     {
+        int count = 0;
         BtnRefresh.IsEnabled = false;
         LblStatus.Text = "正在扫描设备…";
         try
@@ -250,6 +251,7 @@ public partial class MainWindow : Window
 
             var prev = (CmbDevice.SelectedItem as DeviceItem)?.Serial;
             CmbDevice.ItemsSource = items;
+            count = items.Count;
 
             if (items.Count == 0)
             {
@@ -273,9 +275,23 @@ public partial class MainWindow : Window
         {
             BtnRefresh.IsEnabled = true;
         }
+        return count;
     }
 
-    private async void BtnRefresh_Click(object sender, RoutedEventArgs e) => await RefreshDevicesAsync();
+    private async void BtnRefresh_Click(object sender, RoutedEventArgs e)
+    {
+        var old = BtnRefresh.Content;
+        BtnRefresh.Content = "…";
+        try
+        {
+            var n = await RefreshDevicesAsync();
+            LblStatus.Text = n == 0
+                ? $"已刷新 · 未发现设备 · {DateTime.Now:HH:mm:ss}"
+                : $"已刷新 · {n} 台设备 · {DateTime.Now:HH:mm:ss}";
+            AppendLog($"手动刷新设备：{n} 台");
+        }
+        finally { BtnRefresh.Content = old; }
+    }
 
     private void ChkWireless_Changed(object sender, RoutedEventArgs e)
     {

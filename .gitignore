@@ -1,0 +1,15 @@
+﻿# Build output
+bin/
+obj/
+dist/
+*.user
+*.suo
+*.pdb
+
+# Portable package (contains binaries, ship via Releases instead)
+scrcpy/
+ScrcpyDesk-绿色版/
+
+# OS
+Thumbs.db
+.DS_Store

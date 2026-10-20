@@ -1,7 +1,7 @@
 ﻿using System.Runtime.InteropServices;
 using System.Text;
 
-namespace ScrcpyDesk.Services;
+namespace MoyuCast.Services;
 
 public static class NativeWin32
 {

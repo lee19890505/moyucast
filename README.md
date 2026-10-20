@@ -33,6 +33,12 @@
 
 再按一下，一切原样回来，连窗口大小、位置、透明度都和刚才一模一样。
 
+## 界面预览
+
+<p align="center">
+  <img src="docs/screenshots/main.png" width="55%" alt="主界面" />
+</p>
+
 ## 为什么不用原版 scrcpy
 
 原版 scrcpy 很强，但它是命令行工具：
@@ -153,7 +159,7 @@ MoyuCast 把这些全部做成了按钮和开关。
 
 ```bash
 git clone https://github.com/<your-name>/moyucast.git
-cd moyucast/ScrcpyDesk
+cd moyucast/MoyuCast
 dotnet publish -c Release -r win-x64 --self-contained true \
   -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true \
   -p:EnableCompressionInSingleFile=true -o ../dist
@@ -194,6 +200,12 @@ Answer: **press one hotkey and everything disappears.**
 The mirror window vanishes, the settings window vanishes, your desktop looks spotless — your boss only sees you staring intently at a spreadsheet.
 
 Press it again and everything comes back exactly as it was: same size, same position, same opacity.
+
+## Screenshots
+
+<p align="center">
+  <img src="docs/screenshots/main.png" width="55%" alt="Main window" />
+</p>
 
 ## Why not plain scrcpy
 
@@ -307,7 +319,7 @@ Make sure "HID keyboard" is enabled in the Display tab (it is by default).
 
 ```bash
 git clone https://github.com/<your-name>/moyucast.git
-cd moyucast/ScrcpyDesk
+cd moyucast/MoyuCast
 dotnet publish -c Release -r win-x64 --self-contained true \
   -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true \
   -p:EnableCompressionInSingleFile=true -o ../dist

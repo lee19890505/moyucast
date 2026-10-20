@@ -1,7 +1,7 @@
-﻿<Window x:Class="ScrcpyDesk.MainWindow"
+﻿<Window x:Class="MoyuCast.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="ScrcpyDesk" Height="760" Width="430"
+        Title="MoyuCast" Height="760" Width="430"
         WindowStyle="None" AllowsTransparency="True" Background="Transparent"
         ResizeMode="CanResize" WindowStartupLocation="CenterScreen"
         FontFamily="Microsoft YaHei UI" TextOptions.TextFormattingMode="Display"
@@ -295,7 +295,7 @@
                     <Button Tag="min" Style="{StaticResource TrafficLight}" Click="BtnMin_Click"/>
                     <Ellipse Width="12" Height="12" Fill="#3A3B40"/>
                 </StackPanel>
-                <TextBlock Text="ScrcpyDesk" Foreground="#C7C7CC" FontSize="12.5" FontWeight="SemiBold"
+                <TextBlock Text="MoyuCast" Foreground="#C7C7CC" FontSize="12.5" FontWeight="SemiBold"
                            HorizontalAlignment="Center" VerticalAlignment="Center"/>
             </Grid>
 

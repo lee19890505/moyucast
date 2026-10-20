@@ -1,6 +1,6 @@
-using System.Windows.Input;
+ï»¿using System.Windows.Input;
 
-namespace ScrcpyDesk.Services;
+namespace MoyuCast.Services;
 
 public static class HotkeyUtil
 {
@@ -48,7 +48,7 @@ public static class HotkeyUtil
                 continue;
             }
 
-            // ·´ÏòÓ³Éä WPF Key Ãû³Æ
+            // ï¿½ï¿½ï¿½ï¿½Ó³ï¿½ï¿½ WPF Key ï¿½ï¿½ï¿½ï¿½
             if (Enum.TryParse<Key>(p, true, out var key))
             {
                 vk = (uint)KeyInterop.VirtualKeyFromKey(key);

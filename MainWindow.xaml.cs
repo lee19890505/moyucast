@@ -6,10 +6,10 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Threading;
-using ScrcpyDesk.Models;
-using ScrcpyDesk.Services;
+using MoyuCast.Models;
+using MoyuCast.Services;
 
-namespace ScrcpyDesk;
+namespace MoyuCast;
 
 public partial class MainWindow : Window
 {

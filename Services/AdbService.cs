@@ -3,7 +3,7 @@ using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace ScrcpyDesk.Services;
+namespace MoyuCast.Services;
 
 public class AdbService
 {

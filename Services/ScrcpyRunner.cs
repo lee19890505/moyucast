@@ -1,9 +1,9 @@
 ﻿using System.Diagnostics;
 using System.IO;
 using System.Text;
-using ScrcpyDesk.Models;
+using MoyuCast.Models;
 
-namespace ScrcpyDesk.Services;
+namespace MoyuCast.Services;
 
 public class ScrcpyRunner
 {
@@ -14,7 +14,7 @@ public class ScrcpyRunner
 
     public bool IsRunning => _proc != null && !_proc.HasExited;
 
-    public string WindowTitle { get; private set; } = "ScrcpyDesk-Mirror";
+    public string WindowTitle { get; private set; } = "MoyuCast-Mirror";
 
     public string BuildArguments(AppSettings s, string serial, int screenW, int screenH)
     {

@@ -2,7 +2,7 @@
 using System.Data;
 using System.Windows;
 
-namespace ScrcpyDesk;
+namespace MoyuCast;
 
 /// <summary>
 /// Interaction logic for App.xaml

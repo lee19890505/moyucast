@@ -1,7 +1,7 @@
 ﻿using System.IO;
 using System.Text.Json;
 
-namespace ScrcpyDesk.Models;
+namespace MoyuCast.Models;
 
 public class AppSettings
 {
@@ -34,7 +34,7 @@ public class AppSettings
     public int MirrorHeight { get; set; }
 
     private static string Dir => Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ScrcpyDesk");
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "MoyuCast");
 
     private static string FilePath => Path.Combine(Dir, "settings.json");
 

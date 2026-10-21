@@ -55,7 +55,7 @@ public partial class MainWindow : Window
         _adb = new AdbService(_settings.ScrcpyDir);
         if (string.IsNullOrEmpty(_settings.ScrcpyDir))
         {
-            AppendLog("⚠ 未找到 scrcpy 目录，请在「设备」页手动选择");
+            AppendLog(Loc.T("⚠ 未找到 scrcpy 目录，请在「设备」页手动选择"));
             try
             {
                 File.AppendAllText(Path.Combine(GetAppDir(), "startup.log"),
@@ -66,7 +66,7 @@ public partial class MainWindow : Window
         }
         else
         {
-            AppendLog("scrcpy 目录: " + _settings.ScrcpyDir);
+            AppendLog(Loc.T("scrcpy 目录: ") + _settings.ScrcpyDir);
             _settings.Save();
         }
 
@@ -181,9 +181,10 @@ public partial class MainWindow : Window
         RadAudio1.IsChecked = _settings.AudioMode == 1;
         RadAudio2.IsChecked = _settings.AudioMode == 2;
 
-        LblVersion.Text = $"当前版本 v{UpdateService.CurrentVersion}";
-        LblAbout.Text = $"MoyuCast 摸鱼投屏 v{UpdateService.CurrentVersion}\n基于 scrcpy 3.3.4 的 Windows 图形化投屏控制台\n开源协议：MIT（本项目自身代码）";
+        LblVersion.Text = Loc.F("当前版本 v{0}", UpdateService.CurrentVersion);
+        LblAbout.Text = Loc.F("MoyuCast 摸鱼投屏 v{0}\n基于 scrcpy 3.3.4 的 Windows 图形化投屏控制台\n开源协议：MIT（本项目自身代码）", UpdateService.CurrentVersion);
         RefreshScrcpyPathUi();
+        UpdateLangButtons();
         _syncing = false;
     }
 
@@ -253,7 +254,7 @@ public partial class MainWindow : Window
     {
         if (TxtScrcpyDir == null) return;
         TxtScrcpyDir.Text = string.IsNullOrEmpty(_settings.ScrcpyDir)
-            ? "未找到 scrcpy，请点右侧选择"
+            ? Loc.T("未找到 scrcpy，请点右侧选择")
             : _settings.ScrcpyDir;
     }
 
@@ -261,21 +262,21 @@ public partial class MainWindow : Window
     {
         var dlg = new Microsoft.Win32.OpenFolderDialog
         {
-            Title = "选择 scrcpy 所在文件夹（里面有 scrcpy.exe）"
+            Title = Loc.T("选择 scrcpy 所在文件夹（里面有 scrcpy.exe）")
         };
         if (dlg.ShowDialog() == true)
         {
             var dir = dlg.FolderName;
             if (!File.Exists(Path.Combine(dir, "scrcpy.exe")))
             {
-                LblStatus.Text = "该目录下没有 scrcpy.exe";
+                LblStatus.Text = Loc.T("该目录下没有 scrcpy.exe");
                 return;
             }
             _settings.ScrcpyDir = dir;
             _settings.Save();
             _adb = new AdbService(dir);
             RefreshScrcpyPathUi();
-            AppendLog("scrcpy 目录已设为: " + dir);
+            AppendLog(Loc.T("scrcpy 目录已设为: ") + dir);
             _ = RefreshDevicesAsync();
         }
     }
@@ -285,7 +286,7 @@ public partial class MainWindow : Window
     {
         int count = 0;
         BtnRefresh.IsEnabled = false;
-        LblStatus.Text = "正在扫描设备…";
+        LblStatus.Text = Loc.T("正在扫描设备…");
         try
         {
             var devices = await Task.Run(() => _adb.ListDevices());
@@ -303,12 +304,12 @@ public partial class MainWindow : Window
             {
                 if (!string.IsNullOrEmpty(_adb.LastError))
                 {
-                    LblStatus.Text = "adb 错误：请检查 scrcpy 目录";
-                    AppendLog("adb 错误: " + _adb.LastError);
+                    LblStatus.Text = Loc.T("adb 错误：请检查 scrcpy 目录");
+                    AppendLog(Loc.T("adb 错误: ") + _adb.LastError);
                 }
                 else
                 {
-                    LblStatus.Text = "未发现设备";
+                    LblStatus.Text = Loc.T("未发现设备");
                 }
             }
             else
@@ -317,13 +318,13 @@ public partial class MainWindow : Window
                            ?? items.FirstOrDefault(x => x.Serial == _settings.LastSerial)
                            ?? items[0];
                 CmbDevice.SelectedItem = pick;
-                LblStatus.Text = items.Count == 1 ? "已连接 1 台设备" : $"已连接 {items.Count} 台设备";
+                LblStatus.Text = items.Count == 1 ? Loc.T("已连接 1 台设备") : Loc.F("已连接 {0} 台设备", items.Count);
             }
         }
         catch (Exception ex)
         {
-            LblStatus.Text = "扫描失败";
-            AppendLog("刷新设备失败: " + ex.Message);
+            LblStatus.Text = Loc.T("扫描失败");
+            AppendLog(Loc.T("刷新设备失败: ") + ex.Message);
         }
         finally
         {
@@ -340,9 +341,9 @@ public partial class MainWindow : Window
         {
             var n = await RefreshDevicesAsync();
             LblStatus.Text = n == 0
-                ? $"已刷新 · 未发现设备 · {DateTime.Now:HH:mm:ss}"
-                : $"已刷新 · {n} 台设备 · {DateTime.Now:HH:mm:ss}";
-            AppendLog($"手动刷新设备：{n} 台");
+                ? Loc.F("已刷新 · 未发现设备 · {0:HH:mm:ss}", DateTime.Now)
+                : Loc.F("已刷新 · {0} 台设备 · {1:HH:mm:ss}", n, DateTime.Now);
+            AppendLog(Loc.F("手动刷新设备：{0} 台", n));
         }
         finally { BtnRefresh.Content = old; }
     }
@@ -363,36 +364,36 @@ public partial class MainWindow : Window
         var usb = (CmbDevice.ItemsSource as List<DeviceItem>)?.FirstOrDefault(x => !x.Serial.Contains(":"));
         if (usb == null)
         {
-            LblStatus.Text = "请先用 USB 连接手机";
-            AppendLog("一键无线：需要先用 USB 连接一次");
+            LblStatus.Text = Loc.T("请先用 USB 连接手机");
+            AppendLog(Loc.T("一键无线：需要先用 USB 连接一次"));
             return;
         }
 
-        ShowLoading("正在开启无线投屏…", "读取手机 WiFi 地址");
+        ShowLoading(Loc.T("正在开启无线投屏…"), Loc.T("读取手机 WiFi 地址"));
         try
         {
             var ipOut = await Task.Run(() => _adb.Run($"-s {usb.Serial} shell ip -f inet addr show wlan0"));
             var m = Regex.Match(ipOut, @"inet\s+(\d+\.\d+\.\d+\.\d+)");
             if (!m.Success)
             {
-                AppendLog("读取 WiFi IP 失败：" + ipOut.Replace("\n", " "));
-                LblStatus.Text = "读取 IP 失败，请手动填写";
+                AppendLog(Loc.T("读取 WiFi IP 失败：") + ipOut.Replace("\n", " "));
+                LblStatus.Text = Loc.T("读取 IP 失败，请手动填写");
                 return;
             }
             var ip = m.Groups[1].Value;
             TxtIp.Text = ip;
-            TxtLoadingSub.Text = $"已获取 IP {ip}，正在切换 TCP 模式…";
+            TxtLoadingSub.Text = Loc.F("已获取 IP {0}，正在切换 TCP 模式…", ip);
 
             await Task.Run(() => _adb.Run($"-s {usb.Serial} tcpip 5555"));
             await Task.Delay(2500);
 
-            TxtLoadingSub.Text = $"正在连接 {ip}:5555 …";
+            TxtLoadingSub.Text = Loc.F("正在连接 {0}:5555 …", ip);
             var r = await Task.Run(() => _adb.Connect($"{ip}:5555"));
             AppendLog($"connect {ip}:5555 -> {r}");
 
             ChkWireless.IsChecked = true;
             await RefreshDevicesAsync();
-            LblStatus.Text = r.Contains("connected") ? $"无线已连接 {ip}" : "无线连接失败";
+            LblStatus.Text = r.Contains("connected") ? Loc.F("无线已连接 {0}", ip) : Loc.T("无线连接失败");
         }
         catch (Exception ex) { AppendLog(ex.Message); }
         finally { HideLoading(); }
@@ -403,23 +404,23 @@ public partial class MainWindow : Window
         var host = TxtIp.Text.Trim();
         var port = TxtPort.Text.Trim();
         var code = TxtPairCode.Text.Trim();
-        if (host.Length == 0 || code.Length == 0) { LblStatus.Text = "请填写 IP 和配对码"; return; }
+        if (host.Length == 0 || code.Length == 0) { LblStatus.Text = Loc.T("请填写 IP 和配对码"); return; }
 
         var addr = host.Contains(':') ? host : $"{host}:{port}";
         var r = _adb.Pair(addr, code);
         AppendLog("pair " + addr + " -> " + r);
-        LblStatus.Text = r.Contains("Successfully") ? "配对成功" : "配对失败，见日志";
+        LblStatus.Text = r.Contains("Successfully") ? Loc.T("配对成功") : Loc.T("配对失败，见日志");
     }
 
     private async void BtnConnect_Click(object sender, RoutedEventArgs e)
     {
         var host = TxtIp.Text.Trim();
         var port = TxtPort.Text.Trim();
-        if (host.Length == 0) { LblStatus.Text = "请填写 IP"; return; }
+        if (host.Length == 0) { LblStatus.Text = Loc.T("请填写 IP"); return; }
 
         var addr = host.Contains(':') ? host : $"{host}:{port}";
         BtnConnect.IsEnabled = false;
-        ShowLoading("正在连接…", addr);
+        ShowLoading(Loc.T("正在连接…"), addr);
         try
         {
             var r = await Task.Run(() => _adb.Connect(addr));
@@ -433,13 +434,13 @@ public partial class MainWindow : Window
 
     private async void BtnStart_Click(object sender, RoutedEventArgs e)
     {
-        if (_runner.IsRunning) { StopMirroring("已停止"); return; }
+        if (_runner.IsRunning) { StopMirroring(Loc.T("已停止")); return; }
 
         string serial = "";
         if (ChkWireless.IsChecked == true)
         {
             var host = TxtIp.Text.Trim();
-            if (host.Length == 0) { LblStatus.Text = "请填写无线 IP"; return; }
+            if (host.Length == 0) { LblStatus.Text = Loc.T("请填写无线 IP"); return; }
             serial = host.Contains(':') ? host : $"{host}:{TxtPort.Text.Trim()}";
         }
         else if (CmbDevice.SelectedItem is DeviceItem d)
@@ -447,14 +448,14 @@ public partial class MainWindow : Window
             serial = d.Serial;
         }
 
-        if (string.IsNullOrEmpty(serial)) { LblStatus.Text = "请先选择设备"; return; }
+        if (string.IsNullOrEmpty(serial)) { LblStatus.Text = Loc.T("请先选择设备"); return; }
 
         SaveUiToSettings();
         _settings.Save();
         _activeSerial = serial;
 
         BtnStart.IsEnabled = false;
-        ShowLoading("正在连接设备…", "推送服务端并建立画面通道");
+        ShowLoading(Loc.T("正在连接设备…"), Loc.T("推送服务端并建立画面通道"));
 
         var sw = Stopwatch.StartNew();
         try
@@ -465,18 +466,18 @@ public partial class MainWindow : Window
                 _runner.Start(_settings, serial, size.w, size.h);
             });
 
-            BtnStart.Content = "停止投屏";
+            BtnStart.Content = Loc.T("停止投屏");
             UpdateTrayText();
-            LblStatus.Text = "投屏中";
+            LblStatus.Text = Loc.T("投屏中");
 
             bool ok = await WaitForMirrorWindowAsync(8000);
-            AppendLog(ok ? $"投屏就绪（{sw.ElapsedMilliseconds} ms）" : "投屏窗口未出现，请查看日志");
+            AppendLog(ok ? Loc.F("投屏就绪（{0} ms）", sw.ElapsedMilliseconds) : Loc.T("投屏窗口未出现，请查看日志"));
 
             if (ChkScreenOff.IsChecked == true) ApplyScreenDim(true);
         }
         catch (Exception ex)
         {
-            LblStatus.Text = "启动失败";
+            LblStatus.Text = Loc.T("启动失败");
             AppendLog(ex.Message);
         }
         finally
@@ -504,7 +505,7 @@ public partial class MainWindow : Window
         _scrcpyHwnd = IntPtr.Zero;
         _videoAspect = 0;
         _mirrorRectApplied = false;
-        BtnStart.Content = "开始投屏";
+        BtnStart.Content = Loc.T("开始投屏");
         UpdateTrayText();
         LblStatus.Text = status;
     }
@@ -516,9 +517,9 @@ public partial class MainWindow : Window
             if (_restartingMirror) return;   // 主动重启（如音频切换）时忽略旧进程退出
             _scrcpyHwnd = IntPtr.Zero;
             _videoAspect = 0;
-            BtnStart.Content = "开始投屏";
+            BtnStart.Content = Loc.T("开始投屏");
             UpdateTrayText();
-            LblStatus.Text = $"投屏已退出（{code}）";
+            LblStatus.Text = Loc.F("投屏已退出（{0}）", code);
             ApplyScreenDim(false);
         });
     }
@@ -533,7 +534,7 @@ public partial class MainWindow : Window
 
     private void BtnApplyDim_Click(object sender, RoutedEventArgs e)
     {
-        if (string.IsNullOrEmpty(_activeSerial)) { LblStatus.Text = "请先开始投屏"; return; }
+        if (string.IsNullOrEmpty(_activeSerial)) { LblStatus.Text = Loc.T("请先开始投屏"); return; }
         ApplyScreenDim(!_screenDimmed);
         ChkScreenOff.IsChecked = _screenDimmed;
     }
@@ -572,7 +573,7 @@ public partial class MainWindow : Window
                 _adb.Run($"-s {target} shell settings put system screen_brightness 0");
                 _adb.Run($"-s {target} shell cmd display set-brightness 0");
                 _screenDimmed = true;
-                AppendLog("已息屏：亮度=0，设备保持唤醒");
+                AppendLog(Loc.T("已息屏：亮度=0，设备保持唤醒"));
             }
             else if (!dim && _screenDimmed)
             {
@@ -586,10 +587,10 @@ public partial class MainWindow : Window
                 _screenDimmed = false;
                 _settings.DimActive = false;
                 _settings.Save();
-                AppendLog("已恢复亮度");
+                AppendLog(Loc.T("已恢复亮度"));
             }
         }
-        catch (Exception ex) { AppendLog("息屏操作失败: " + ex.Message); }
+        catch (Exception ex) { AppendLog(Loc.T("息屏操作失败: ") + ex.Message); }
     }
 
     /// <summary>启动时如发现上次息屏没来得及恢复，自动补一次</summary>
@@ -612,7 +613,7 @@ public partial class MainWindow : Window
         _savedSecondaryMode = _settings.DimSavedSecondaryMode;
         _screenDimmed = true;   // 让 ApplyScreenDim(false) 走恢复分支
         ApplyScreenDim(false, serial);
-        AppendLog("检测到上次息屏未恢复，已自动还原屏幕亮度");
+        AppendLog(Loc.T("检测到上次息屏未恢复，已自动还原屏幕亮度"));
     }
 
     // ---------------- 音频 ----------------
@@ -624,17 +625,12 @@ public partial class MainWindow : Window
         _settings.AudioMode = mode;
         _settings.Save();
 
-        switch (mode)
-        {
-            case 0: LblAudioHint.Text = "手机出声，电脑不继承。"; break;
-            case 1: LblAudioHint.Text = "手机与电脑同时出声（需 Android 13+）。"; break;
-            case 2: LblAudioHint.Text = "仅电脑出声，手机会静音。"; break;
-        }
+        ApplyAudioHint(mode);
 
         if (!_runner.IsRunning || string.IsNullOrEmpty(_activeSerial)) return;
 
         var serial = _activeSerial;
-        AppendLog("音频模式切换，正在重启投屏…");
+        AppendLog(Loc.T("音频模式切换，正在重启投屏…"));
         BtnStart.IsEnabled = false;
         _restartingMirror = true;
         try
@@ -649,10 +645,10 @@ public partial class MainWindow : Window
             _videoAspect = 0;
 
             bool ok = await WaitForMirrorWindowAsync(8000);
-            LblStatus.Text = ok ? "已按新音频模式重启" : "重启后未等到投屏窗口，请查看日志";
-            AppendLog(ok ? "音频模式已切换" : "音频模式切换后未检测到投屏窗口");
+            LblStatus.Text = ok ? Loc.T("已按新音频模式重启") : Loc.T("重启后未等到投屏窗口，请查看日志");
+            AppendLog(ok ? Loc.T("音频模式已切换") : Loc.T("音频模式切换后未检测到投屏窗口"));
         }
-        catch (Exception ex) { AppendLog("重启投屏失败: " + ex.Message); }
+        catch (Exception ex) { AppendLog(Loc.T("重启投屏失败: ") + ex.Message); }
         finally
         {
             _restartingMirror = false;
@@ -669,7 +665,7 @@ public partial class MainWindow : Window
         _settings.Save();
         _autoHideArmed = false;
         _outsideSince = DateTime.MinValue;
-        AppendLog(_settings.AutoHideOnLeave ? "已开启：鼠标移开自动隐藏" : "已关闭：鼠标移开自动隐藏");
+        AppendLog(_settings.AutoHideOnLeave ? Loc.T("已开启：鼠标移开自动隐藏") : Loc.T("已关闭：鼠标移开自动隐藏"));
     }
 
     private void HoverTimer_Tick(object sender, EventArgs e)
@@ -709,7 +705,7 @@ public partial class MainWindow : Window
         {
             _autoHideArmed = false;
             _outsideSince = DateTime.MinValue;
-            AppendLog("鼠标移开投屏窗口，自动隐藏");
+            AppendLog(Loc.T("鼠标移开投屏窗口，自动隐藏"));
             ToggleBossMode();
         }
     }
@@ -738,14 +734,14 @@ public partial class MainWindow : Window
         _capturingHotkey = !_capturingHotkey;
         if (_capturingHotkey)
         {
-            TxtBossKey.Text = "请按下组合键…";
-            BtnCaptureKey.Content = "取消";
+            TxtBossKey.Text = Loc.T("请按下组合键…");
+            BtnCaptureKey.Content = Loc.T("取消");
             Focus();
         }
         else
         {
             TxtBossKey.Text = _settings.BossKey;
-            BtnCaptureKey.Content = "录制";
+            BtnCaptureKey.Content = Loc.T("录制");
         }
     }
 
@@ -757,7 +753,7 @@ public partial class MainWindow : Window
         {
             _capturingHotkey = false;
             TxtBossKey.Text = _settings.BossKey;
-            BtnCaptureKey.Content = "录制";
+            BtnCaptureKey.Content = Loc.T("录制");
             e.Handled = true;
             return;
         }
@@ -775,11 +771,11 @@ public partial class MainWindow : Window
         _settings.Save();
 
         _capturingHotkey = false;
-        BtnCaptureKey.Content = "录制";
+        BtnCaptureKey.Content = Loc.T("录制");
 
         UnregisterBossKey();
         RegisterBossKey();
-        AppendLog("老板键已改为 " + desc);
+        AppendLog(Loc.T("老板键已改为 ") + desc);
         e.Handled = true;
     }
 
@@ -791,13 +787,13 @@ public partial class MainWindow : Window
 
         if (!HotkeyUtil.TryParse(_settings.BossKey, out var mods, out var vk))
         {
-            AppendLog("老板键格式无效：" + _settings.BossKey);
+            AppendLog(Loc.T("老板键格式无效：") + _settings.BossKey);
             return;
         }
 
         _hotkeyRegistered = NativeWin32.RegisterHotKey(helper.Handle, HOTKEY_ID, mods, vk);
-        AppendLog(_hotkeyRegistered ? "老板键已注册：" + _settings.BossKey
-                                   : "老板键注册失败（可能被占用）：" + _settings.BossKey);
+        AppendLog(_hotkeyRegistered ? Loc.T("老板键已注册：") + _settings.BossKey
+                                   : Loc.T("老板键注册失败（可能被占用）：") + _settings.BossKey);
     }
 
     private void UnregisterBossKey()
@@ -895,7 +891,7 @@ public partial class MainWindow : Window
             if (mirror != IntPtr.Zero) NativeWin32.ShowWindow(mirror, NativeWin32.SW_HIDE);
             Hide();
             _bossHidden = true;
-            AppendLog("老板键：已隐藏");
+            AppendLog(Loc.T("老板键：已隐藏"));
         }
         else
         {
@@ -927,7 +923,7 @@ public partial class MainWindow : Window
             _autoHideArmed = false;
             _outsideSince = DateTime.MinValue;
             _bossHidden = false;
-            AppendLog("老板键：已恢复");
+            AppendLog(Loc.T("老板键：已恢复"));
         }
     }
 
@@ -1034,12 +1030,12 @@ public partial class MainWindow : Window
                     NativeWin32.MoveResize(hwnd, _settings.MirrorLeft, _settings.MirrorTop,
                         _settings.MirrorWidth, _settings.MirrorHeight);
                     _mirrorRectApplied = true;
-                    AppendLog("已恢复上次的投屏窗口位置/大小");
+                    AppendLog(Loc.T("已恢复上次的投屏窗口位置/大小"));
                 }
 
                 NativeWin32.SetTopmost(hwnd, ChkTop.IsChecked == true);
                 NativeWin32.SetAlpha(hwnd, SldOpacity.Value / 100.0);
-                AppendLog($"已锁定投屏窗口（比例 {_videoAspect:0.000}）");
+                AppendLog(Loc.F("已锁定投屏窗口（比例 {0:0.000}）", _videoAspect));
             }
             return;
         }
@@ -1089,13 +1085,63 @@ public partial class MainWindow : Window
         }
     }
 
+    // ---------------- 语言 ----------------
+
+    private void BtnLangZh_Click(object sender, RoutedEventArgs e) => SwitchLanguage("zh-CN");
+    private void BtnLangEn_Click(object sender, RoutedEventArgs e) => SwitchLanguage("en-US");
+
+    private void SwitchLanguage(string lang)
+    {
+        if (Loc.Instance.Current.Equals(lang, StringComparison.OrdinalIgnoreCase)) return;
+
+        Loc.Instance.SetLanguage(lang);
+        _settings.Language = lang;
+        _settings.Save();
+
+        ApplyLanguage();
+        AppendLog($"Language / 语言: {(Loc.Instance.IsEnglish ? "English" : "中文")}");
+    }
+
+    /// <summary>语言切换后，刷新那些不是通过 Binding 生成的文本</summary>
+    private void ApplyLanguage()
+    {
+        LblVersion.Text = Loc.F("当前版本 v{0}", UpdateService.CurrentVersion);
+        LblAbout.Text = Loc.F("MoyuCast 摸鱼投屏 v{0}\n基于 scrcpy 3.3.4 的 Windows 图形化投屏控制台\n开源协议：MIT（本项目自身代码）",
+            UpdateService.CurrentVersion);
+        LblUpdate.Text = Loc.T("从 GitHub Releases 获取最新版本，国内网络自动走镜像。");
+        BtnStart.Content = _runner.IsRunning ? Loc.T("停止投屏") : Loc.T("开始投屏");
+        BtnCaptureKey.Content = _capturingHotkey ? Loc.T("取消") : Loc.T("录制");
+        BtnToggleLog.Content = PnlLog.Visibility == Visibility.Visible ? Loc.T("收起日志 ▴") : Loc.T("展开日志 ▾");
+        ApplyAudioHint(_settings.AudioMode);
+        UpdateLangButtons();
+        UpdateTrayText();
+    }
+
+    private void UpdateLangButtons()
+    {
+        bool en = Loc.Instance.IsEnglish;
+        if (BtnLangZh == null || BtnLangEn == null) return;
+        BtnLangZh.IsEnabled = en;    // 当前语言按钮置灰
+        BtnLangEn.IsEnabled = !en;
+    }
+
+    private void ApplyAudioHint(int mode)
+    {
+        switch (mode)
+        {
+            case 1: LblAudioHint.Text = Loc.T("手机与电脑同时出声（需 Android 13+）。"); break;
+            case 2: LblAudioHint.Text = Loc.T("仅电脑出声，手机会静音。"); break;
+            default: LblAudioHint.Text = Loc.T("手机出声，电脑不继承。"); break;
+        }
+    }
+
     // ---------------- 日志折叠 ----------------
 
     private void BtnToggleLog_Click(object sender, RoutedEventArgs e)
     {
         bool show = PnlLog.Visibility != Visibility.Visible;
         PnlLog.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
-        BtnToggleLog.Content = show ? "收起日志 ▴" : "展开日志 ▾";
+        BtnToggleLog.Content = show ? Loc.T("收起日志 ▴") : Loc.T("展开日志 ▾");
         if (show) TxtLog.ScrollToEnd();
     }
 
@@ -1107,7 +1153,7 @@ public partial class MainWindow : Window
         {
             Process.Start(new ProcessStartInfo("https://github.com/lee19890505/moyucast") { UseShellExecute = true });
         }
-        catch (Exception ex) { AppendLog("打开项目主页失败: " + ex.Message); }
+        catch (Exception ex) { AppendLog(Loc.T("打开项目主页失败: ") + ex.Message); }
     }
 
     // ---------------- 检查更新 ----------------
@@ -1115,36 +1161,36 @@ public partial class MainWindow : Window
     private async void BtnCheckUpdate_Click(object sender, RoutedEventArgs e)
     {
         BtnCheckUpdate.IsEnabled = false;
-        LblUpdate.Text = "正在检查更新…";
+        LblUpdate.Text = Loc.T("正在检查更新…");
         try
         {
             var info = await UpdateService.CheckAsync();
             if (string.IsNullOrEmpty(info.Version))
             {
-                LblUpdate.Text = "未获取到版本信息，请稍后再试。";
+                LblUpdate.Text = Loc.T("未获取到版本信息，请稍后再试。");
                 return;
             }
 
             if (UpdateService.IsNewer(info.Version, UpdateService.CurrentVersion))
             {
-                LblUpdate.Text = $"发现新版本 v{info.Version}（当前 v{UpdateService.CurrentVersion}）";
-                AppendLog($"检查更新：发现新版本 v{info.Version}");
+                LblUpdate.Text = Loc.F("发现新版本 v{0}（当前 v{1}）", info.Version, UpdateService.CurrentVersion);
+                AppendLog(Loc.F("检查更新：发现新版本 v{0}", info.Version));
                 var r = MessageBox.Show(
-                    $"发现新版本 v{info.Version}\n当前版本 v{UpdateService.CurrentVersion}\n\n是否打开发布页下载？",
-                    "MoyuCast 检查更新", MessageBoxButton.YesNo, MessageBoxImage.Information);
+                    Loc.F("发现新版本 v{0}\n当前版本 v{1}\n\n是否打开发布页下载？", info.Version, UpdateService.CurrentVersion),
+                    Loc.T("MoyuCast 检查更新"), MessageBoxButton.YesNo, MessageBoxImage.Information);
                 if (r == MessageBoxResult.Yes && !string.IsNullOrEmpty(info.Url))
                     Process.Start(new ProcessStartInfo(info.Url) { UseShellExecute = true });
             }
             else
             {
-                LblUpdate.Text = $"已是最新版本 v{UpdateService.CurrentVersion}";
-                AppendLog("检查更新：已是最新版本 v" + UpdateService.CurrentVersion);
+                LblUpdate.Text = Loc.F("已是最新版本 v{0}", UpdateService.CurrentVersion);
+                AppendLog(Loc.T("检查更新：已是最新版本 v") + UpdateService.CurrentVersion);
             }
         }
         catch (Exception ex)
         {
-            LblUpdate.Text = "检查失败：" + ex.Message;
-            AppendLog("检查更新失败: " + ex.Message);
+            LblUpdate.Text = Loc.T("检查失败：") + ex.Message;
+            AppendLog(Loc.T("检查更新失败: ") + ex.Message);
         }
         finally
         {
@@ -1165,7 +1211,7 @@ public partial class MainWindow : Window
             _tray = new System.Windows.Forms.NotifyIcon
             {
                 Icon = icon,
-                Text = "MoyuCast 摸鱼投屏",
+                Text = Loc.T("MoyuCast 摸鱼投屏"),
                 Visible = true,
                 ContextMenuStrip = _trayMenu
             };
@@ -1174,7 +1220,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            AppendLog("托盘图标初始化失败: " + ex.Message);
+            AppendLog(Loc.T("托盘图标初始化失败: ") + ex.Message);
         }
     }
 
@@ -1183,22 +1229,22 @@ public partial class MainWindow : Window
         if (_trayMenu == null) return;
         _trayMenu.Items.Clear();
 
-        var show = new System.Windows.Forms.ToolStripMenuItem("显示主窗口");
+        var show = new System.Windows.Forms.ToolStripMenuItem(Loc.T("显示主窗口"));
         show.Click += (_, __) => ShowFromTray();
         _trayMenu.Items.Add(show);
 
-        var toggle = new System.Windows.Forms.ToolStripMenuItem(_runner.IsRunning ? "停止投屏" : "开始投屏");
+        var toggle = new System.Windows.Forms.ToolStripMenuItem(_runner.IsRunning ? Loc.T("停止投屏") : Loc.T("开始投屏"));
         toggle.Click += (_, __) =>
         {
             ShowFromTray();
-            if (_runner.IsRunning) StopMirroring("已停止");
+            if (_runner.IsRunning) StopMirroring(Loc.T("已停止"));
             else BtnStart_Click(BtnStart, new RoutedEventArgs());
         };
         _trayMenu.Items.Add(toggle);
 
         _trayMenu.Items.Add(new System.Windows.Forms.ToolStripSeparator());
 
-        var exit = new System.Windows.Forms.ToolStripMenuItem("退出 MoyuCast");
+        var exit = new System.Windows.Forms.ToolStripMenuItem(Loc.T("退出 MoyuCast"));
         exit.Click += (_, __) =>
         {
             Close();
@@ -1211,7 +1257,7 @@ public partial class MainWindow : Window
         if (_tray == null) return;
         try
         {
-            _tray.Text = _runner.IsRunning ? "MoyuCast · 投屏中" : "MoyuCast 摸鱼投屏";
+            _tray.Text = _runner.IsRunning ? Loc.T("MoyuCast · 投屏中") : Loc.T("MoyuCast 摸鱼投屏");
         }
         catch { }
     }
@@ -1224,8 +1270,8 @@ public partial class MainWindow : Window
             _trayHintShown = true;
             try
             {
-                _tray.ShowBalloonTip(2500, "MoyuCast 仍在运行",
-                    "已最小化到托盘，双击托盘图标可恢复窗口。", System.Windows.Forms.ToolTipIcon.Info);
+                _tray.ShowBalloonTip(2500, Loc.T("MoyuCast 仍在运行"),
+                    Loc.T("已最小化到托盘，双击托盘图标可恢复窗口。"), System.Windows.Forms.ToolTipIcon.Info);
             }
             catch { }
         }
@@ -1264,3 +1310,5 @@ public partial class MainWindow : Window
         TxtLog.ScrollToEnd();
     }
 }
+
+

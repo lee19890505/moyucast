@@ -46,6 +46,11 @@ public partial class App : Application
         };
         _listener.Start();
 
+        // 语言：保存过就用保存的，否则跟随系统
+        var saved = Models.AppSettings.Load();
+        Services.Loc.Instance.SetLanguage(
+            string.IsNullOrEmpty(saved.Language) ? Services.Loc.DetectDefault() : saved.Language);
+
         base.OnStartup(e);
     }
 
@@ -86,3 +91,4 @@ public partial class App : Application
         base.OnExit(e);
     }
 }
+

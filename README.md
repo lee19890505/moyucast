@@ -114,6 +114,7 @@ MoyuCast 把这些全部做成了按钮和开关。
 - **单实例**：重复启动只会唤醒已有窗口，不会开出第二个进程
 - **应用内检查更新**：读取 GitHub Releases，国内网络自动走镜像
 - **像素风图标**：16 ~ 256 多尺寸 ICO，应用和托盘统一使用
+- **中英双语**：默认跟随系统语言，「更多」页可一键切换，立即生效无需重启
 
 ## 快速开始
 
@@ -375,4 +376,5 @@ This project is only a GUI wrapper around scrcpy. It does not modify or crack an
 Powered by [scrcpy](https://github.com/Genymobile/scrcpy) · [FFmpeg](https://ffmpeg.org/) · [SDL2](https://www.libsdl.org/)
 
 </div>
+
 

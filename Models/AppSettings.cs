@@ -6,6 +6,8 @@ namespace MoyuCast.Models;
 public class AppSettings
 {
     public string ScrcpyDir { get; set; } = "";
+    /// <summary>界面语言：zh-CN / en-US，空字符串表示跟随系统</summary>
+    public string Language { get; set; } = "";
     public string LastSerial { get; set; } = "";
     public string LastWirelessIp { get; set; } = "";
     public int AudioMode { get; set; } = 0;
@@ -72,3 +74,4 @@ public class AppSettings
         catch { }
     }
 }
+

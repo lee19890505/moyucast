@@ -48,6 +48,7 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        InitTray();
 
         _settings = AppSettings.Load();
         _settings.ScrcpyDir = ResolveScrcpyDir(_settings.ScrcpyDir);
@@ -110,6 +111,7 @@ public partial class MainWindow : Window
         ApplyScreenDim(false);
         _runner.Stop();
         UnregisterBossKey();
+        DisposeTray();
     }
 
     private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -117,7 +119,7 @@ public partial class MainWindow : Window
         if (e.ButtonState == MouseButtonState.Pressed) DragMove();
     }
 
-    private void BtnMin_Click(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
+    private void BtnMin_Click(object sender, RoutedEventArgs e) => HideToTray();
     private void BtnClose_Click(object sender, RoutedEventArgs e) => Close();
 
     // ---------------- 加载遮罩 ----------------
@@ -179,6 +181,7 @@ public partial class MainWindow : Window
         RadAudio1.IsChecked = _settings.AudioMode == 1;
         RadAudio2.IsChecked = _settings.AudioMode == 2;
 
+        LblVersion.Text = $"当前版本 v{UpdateService.CurrentVersion}";
         RefreshScrcpyPathUi();
         _syncing = false;
     }
@@ -462,6 +465,7 @@ public partial class MainWindow : Window
             });
 
             BtnStart.Content = "停止投屏";
+            UpdateTrayText();
             LblStatus.Text = "投屏中";
 
             bool ok = await WaitForMirrorWindowAsync(8000);
@@ -500,6 +504,7 @@ public partial class MainWindow : Window
         _videoAspect = 0;
         _mirrorRectApplied = false;
         BtnStart.Content = "开始投屏";
+        UpdateTrayText();
         LblStatus.Text = status;
     }
 
@@ -511,6 +516,7 @@ public partial class MainWindow : Window
             _scrcpyHwnd = IntPtr.Zero;
             _videoAspect = 0;
             BtnStart.Content = "开始投屏";
+            UpdateTrayText();
             LblStatus.Text = $"投屏已退出（{code}）";
             ApplyScreenDim(false);
         });
@@ -805,6 +811,9 @@ public partial class MainWindow : Window
     }
 
     private bool _restartingMirror;
+    private System.Windows.Forms.NotifyIcon _tray;
+    private System.Windows.Forms.ContextMenuStrip _trayMenu;
+    private bool _trayHintShown;
     private bool _bossHidden;
     private NativeWin32.RECT _bossMirrorRect;
     private bool _bossMirrorMinimized;
@@ -1077,6 +1086,151 @@ public partial class MainWindow : Window
                 cr.Right + frameW, newH + frameH,
                 NativeWin32.SWP_NOMOVE | NativeWin32.SWP_NOZORDER | NativeWin32.SWP_NOACTIVATE);
         }
+    }
+
+    // ---------------- 检查更新 ----------------
+
+    private async void BtnCheckUpdate_Click(object sender, RoutedEventArgs e)
+    {
+        BtnCheckUpdate.IsEnabled = false;
+        LblUpdate.Text = "正在检查更新…";
+        try
+        {
+            var info = await UpdateService.CheckAsync();
+            if (string.IsNullOrEmpty(info.Version))
+            {
+                LblUpdate.Text = "未获取到版本信息，请稍后再试。";
+                return;
+            }
+
+            if (UpdateService.IsNewer(info.Version, UpdateService.CurrentVersion))
+            {
+                LblUpdate.Text = $"发现新版本 v{info.Version}（当前 v{UpdateService.CurrentVersion}）";
+                AppendLog($"检查更新：发现新版本 v{info.Version}");
+                var r = MessageBox.Show(
+                    $"发现新版本 v{info.Version}\n当前版本 v{UpdateService.CurrentVersion}\n\n是否打开发布页下载？",
+                    "MoyuCast 检查更新", MessageBoxButton.YesNo, MessageBoxImage.Information);
+                if (r == MessageBoxResult.Yes && !string.IsNullOrEmpty(info.Url))
+                    Process.Start(new ProcessStartInfo(info.Url) { UseShellExecute = true });
+            }
+            else
+            {
+                LblUpdate.Text = $"已是最新版本 v{UpdateService.CurrentVersion}";
+                AppendLog("检查更新：已是最新版本 v" + UpdateService.CurrentVersion);
+            }
+        }
+        catch (Exception ex)
+        {
+            LblUpdate.Text = "检查失败：" + ex.Message;
+            AppendLog("检查更新失败: " + ex.Message);
+        }
+        finally
+        {
+            BtnCheckUpdate.IsEnabled = true;
+        }
+    }
+
+    // ---------------- 托盘图标 ----------------
+
+    private void InitTray()
+    {
+        try
+        {
+            var icon = System.Drawing.Icon.ExtractAssociatedIcon(Environment.ProcessPath);
+            _trayMenu = new System.Windows.Forms.ContextMenuStrip();
+            _trayMenu.Opening += (_, __) => RefreshTrayMenu();
+
+            _tray = new System.Windows.Forms.NotifyIcon
+            {
+                Icon = icon,
+                Text = "MoyuCast 摸鱼投屏",
+                Visible = true,
+                ContextMenuStrip = _trayMenu
+            };
+            _tray.DoubleClick += (_, __) => ShowFromTray();
+            RefreshTrayMenu();
+        }
+        catch (Exception ex)
+        {
+            AppendLog("托盘图标初始化失败: " + ex.Message);
+        }
+    }
+
+    private void RefreshTrayMenu()
+    {
+        if (_trayMenu == null) return;
+        _trayMenu.Items.Clear();
+
+        var show = new System.Windows.Forms.ToolStripMenuItem("显示主窗口");
+        show.Click += (_, __) => ShowFromTray();
+        _trayMenu.Items.Add(show);
+
+        var toggle = new System.Windows.Forms.ToolStripMenuItem(_runner.IsRunning ? "停止投屏" : "开始投屏");
+        toggle.Click += (_, __) =>
+        {
+            ShowFromTray();
+            if (_runner.IsRunning) StopMirroring("已停止");
+            else BtnStart_Click(BtnStart, new RoutedEventArgs());
+        };
+        _trayMenu.Items.Add(toggle);
+
+        _trayMenu.Items.Add(new System.Windows.Forms.ToolStripSeparator());
+
+        var exit = new System.Windows.Forms.ToolStripMenuItem("退出 MoyuCast");
+        exit.Click += (_, __) =>
+        {
+            Close();
+        };
+        _trayMenu.Items.Add(exit);
+    }
+
+    private void UpdateTrayText()
+    {
+        if (_tray == null) return;
+        try
+        {
+            _tray.Text = _runner.IsRunning ? "MoyuCast · 投屏中" : "MoyuCast 摸鱼投屏";
+        }
+        catch { }
+    }
+
+    private void HideToTray()
+    {
+        Hide();
+        if (!_trayHintShown && _tray != null)
+        {
+            _trayHintShown = true;
+            try
+            {
+                _tray.ShowBalloonTip(2500, "MoyuCast 仍在运行",
+                    "已最小化到托盘，双击托盘图标可恢复窗口。", System.Windows.Forms.ToolTipIcon.Info);
+            }
+            catch { }
+        }
+    }
+
+    private void ShowFromTray()
+    {
+        Show();
+        if (WindowState == WindowState.Minimized) WindowState = WindowState.Normal;
+        Activate();
+        Topmost = true;
+        Topmost = false;
+        Focus();
+    }
+
+    private void DisposeTray()
+    {
+        try
+        {
+            if (_tray != null)
+            {
+                _tray.Visible = false;
+                _tray.Dispose();
+                _tray = null;
+            }
+        }
+        catch { }
     }
 
     // ---------------- 日志 ----------------

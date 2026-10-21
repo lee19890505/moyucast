@@ -1,0 +1,197 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>lee19890505/moyucast · MoyuCast 摸鱼投屏</title>
+<style>
+  :root{
+    --bg:#ffffff; --bg-subtle:#f6f8fa; --border:#d0d7de; --border-muted:#d8dee4;
+    --fg:#1f2328; --fg-muted:#656d76; --accent:#0969da; --accent-subtle:#ddf4ff;
+    --green:#1a7f37;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);
+       font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans","Microsoft YaHei UI",Helvetica,Arial,sans-serif;
+       font-size:14px;line-height:1.5}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+  .topbar{background:#24292f;color:#fff;padding:10px 24px;display:flex;align-items:center;gap:10px;font-size:13px}
+  .topbar .repo{font-weight:600}
+  .topbar .sep{opacity:.45}
+  .topbar .pill{border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:1px 9px;font-size:11px;opacity:.9}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 24px}
+  header.repo-head{padding:20px 0 0}
+  .repo-title{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:20px}
+  .repo-title .owner{font-weight:400;color:var(--fg-muted)}
+  .repo-title .name{font-weight:600;color:var(--accent)}
+  .badge{font-size:12px;color:var(--fg-muted);border:1px solid var(--border);border-radius:999px;padding:1px 8px}
+  .btn-row{display:flex;gap:8px;margin-left:auto}
+  .btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);background:var(--bg-subtle);
+       border-radius:6px;padding:5px 12px;font-size:13px;color:var(--fg);cursor:pointer}
+  nav.tabs{display:flex;gap:4px;margin-top:18px;border-bottom:1px solid var(--border);overflow-x:auto}
+  nav.tabs a{padding:9px 12px;color:var(--fg);font-size:14px;border-bottom:2px solid transparent;white-space:nowrap}
+  nav.tabs a.active{font-weight:600;border-bottom-color:#fd8c73}
+  nav.tabs a:hover{background:var(--bg-subtle);text-decoration:none;border-radius:6px 6px 0 0}
+  .layout{display:grid;grid-template-columns:minmax(0,1fr) 296px;gap:24px;padding:24px 0 60px}
+  @media (max-width:900px){.layout{grid-template-columns:1fr}}
+  .card{border:1px solid var(--border);border-radius:6px;background:#fff}
+  .readme-head{padding:10px 16px;border-bottom:1px solid var(--border);background:var(--bg-subtle);
+               border-radius:6px 6px 0 0;font-size:13px;color:var(--fg-muted)}
+  .readme-body{padding:26px 32px 40px}
+  .readme-body h1{font-size:24px;border-bottom:1px solid var(--border-muted);padding-bottom:.3em;margin:.4em 0}
+  .readme-body h2{font-size:19px;border-bottom:1px solid var(--border-muted);padding-bottom:.3em;margin:1.4em 0 .6em}
+  .readme-body p{margin:.6em 0}
+  .readme-body ul{margin:.5em 0;padding-left:1.6em}
+  .readme-body li{margin:.25em 0}
+  .hero{border-radius:6px;overflow:hidden;border:1px solid var(--border);margin:8px 0 22px}
+  .hero img{display:block;width:100%}
+  .shots{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:16px 0 8px}
+  .shots img{width:100%;border:1px solid var(--border);border-radius:8px;display:block}
+  .shots .cap{font-size:12px;color:var(--fg-muted);text-align:center;margin-top:6px}
+  .callout{border-left:4px solid var(--accent);background:var(--accent-subtle);padding:12px 16px;border-radius:6px;margin:16px 0}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media (max-width:700px){.grid2{grid-template-columns:1fr}.shots{grid-template-columns:repeat(2,1fr)}}
+  .feat{border:1px solid var(--border);border-radius:8px;padding:14px 16px;background:var(--bg-subtle)}
+  .feat b{display:block;margin-bottom:4px}
+  .side h3{font-size:16px;margin:0 0 10px}
+  .side p{margin:0 0 14px;color:var(--fg-muted)}
+  .topics{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
+  .topic{background:var(--accent-subtle);color:var(--accent);border-radius:999px;padding:2px 10px;font-size:12px}
+  .stat{display:flex;align-items:center;gap:8px;color:var(--fg-muted);font-size:13px;margin:6px 0}
+  .stat b{color:var(--fg)}
+  .side .card{padding:16px}
+  .divider{height:1px;background:var(--border);margin:14px 0}
+  footer{border-top:1px solid var(--border);padding:24px 0 60px;color:var(--fg-muted);font-size:12px;text-align:center}
+  code{background:rgba(175,184,193,.2);padding:.2em .4em;border-radius:6px;font-size:85%;
+       font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .kbd{border:1px solid var(--border);border-bottom-width:2px;border-radius:6px;padding:1px 6px;font-size:12px;background:var(--bg-subtle)}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span>🐟</span>
+  <span>lee19890505</span><span class="sep">/</span><span class="repo">moyucast</span>
+  <span class="pill">Public</span>
+</div>
+
+<div class="wrap">
+  <header class="repo-head">
+    <div class="repo-title">
+      <span class="owner">lee19890505 /</span>
+      <span class="name">moyucast</span>
+      <span class="badge">Public</span>
+      <div class="btn-row">
+        <span class="btn">⭐ Star <b>1</b></span>
+        <span class="btn">🍴 Fork <b>0</b></span>
+      </div>
+    </div>
+    <nav class="tabs">
+      <a class="active" href="#">Code</a>
+      <a href="#">Issues <span class="badge">0</span></a>
+      <a href="#">Pull requests <span class="badge">0</span></a>
+      <a href="#">Actions</a>
+      <a href="#">Projects</a>
+      <a href="#">Wiki</a>
+      <a href="#">Security</a>
+      <a href="#">Insights</a>
+    </nav>
+  </header>
+
+  <div class="layout">
+    <main>
+      <div class="card">
+        <div class="readme-head">📄 README.md</div>
+        <div class="readme-body">
+
+          <div class="hero"><img src="__BANNER__" alt="MoyuCast 封面" /></div>
+
+          <h1>🐟 MoyuCast · 摸鱼投屏</h1>
+          <p><b>老板来了？一键消失。</b> <span style="color:#656d76">Boss incoming? One key, and it's gone.</span></p>
+
+          <div class="callout">
+            基于 <b>scrcpy 3.3.4</b> 的 Windows 图形化投屏控制台。不用记命令行，<br/>
+            把手机画面投到电脑上，还能用老板键一键隐身、调透明度、鼠标移开自动隐藏。
+          </div>
+
+          <h2>功能</h2>
+          <div class="grid2">
+            <div class="feat"><b>🕵️ 一键隐身</b>老板键隐藏 / 恢复投屏窗口，连窗口大小位置透明度都原样还原</div>
+            <div class="feat"><b>👻 透明可调</b>20% ~ 100% 实时调节，只作用于投屏窗口</div>
+            <div class="feat"><b>🖱️ 鼠标移开自动隐藏</b>离开窗口 0.5 秒自动进入隐身状态</div>
+            <div class="feat"><b>📐 比例锁定</b>无黑边、等比缩放，怎么拖都不变形</div>
+            <div class="feat"><b>📶 无线投屏</b>USB 连一次，自动切换为无线</div>
+            <div class="feat"><b>🌙 息屏投屏</b>手机亮度压到 0 并保持唤醒，电脑端照常操作</div>
+            <div class="feat"><b>🔊 音频三态</b>手机响 / 两边响 / 仅电脑响</div>
+            <div class="feat"><b>🌏 中英双语</b>默认跟随系统，应用内一键切换</div>
+            <div class="feat"><b>📌 托盘常驻</b>最小化到托盘，双击恢复</div>
+            <div class="feat"><b>🔄 检查更新</b>应用内读取 GitHub Releases，国内自动走镜像</div>
+          </div>
+
+          <h2>界面预览</h2>
+          <div class="shots">
+            <div><img src="__S1__" alt="设备" /><div class="cap">设备</div></div>
+            <div><img src="__S2__" alt="画面" /><div class="cap">画面</div></div>
+            <div><img src="__S3__" alt="声音" /><div class="cap">声音</div></div>
+            <div><img src="__S4__" alt="更多" /><div class="cap">更多</div></div>
+          </div>
+
+          <h2>快速开始</h2>
+          <ul>
+            <li>手机打开「开发者选项 → USB 调试」，用数据线连电脑</li>
+            <li>双击 <code>MoyuCast.exe</code>，选设备，点 <b>开始投屏</b></li>
+            <li>按 <span class="kbd">Ctrl</span> + <span class="kbd"></span> 随时隐身 / 恢复（可自定义）</li>
+          </ul>
+
+          <h2>更新日志 · v1.0.3</h2>
+          <ul>
+            <li><b>新增</b>：中英双语界面、托盘图标、单实例锁、应用内检查更新、像素风图标、自动化测试</li>
+            <li><b>变更</b>：导航精简为 4 个页签；透明度 / 老板键移到「画面」页顶部；日志收进「更多」页</li>
+            <li><b>修复</b>：adb 卡死、窗口几何不恢复、息屏残留、音频切换卡顿、开投屏误触发自动隐藏等 10 个问题</li>
+          </ul>
+
+          <h2>技术栈</h2>
+          <p>
+            <span class="topic">C# / .NET 8</span>
+            <span class="topic">WPF</span>
+            <span class="topic">Win32 P/Invoke</span>
+            <span class="topic">scrcpy 3.3.4</span>
+            <span class="topic">单文件自包含发布</span>
+          </p>
+          <p style="color:#656d76">本项目自身代码采用 MIT 协议；scrcpy 为独立项目（Apache-2.0）。</p>
+        </div>
+      </div>
+    </main>
+
+    <aside class="side">
+      <h3>About</h3>
+      <p>摸鱼投屏 · 基于 scrcpy 的 Windows 投屏控制台，老板键一键隐身<br/>
+         <span style="font-size:12px">Windows GUI for scrcpy with a boss-key panic hide</span></p>
+      <div class="topics">
+        <span class="topic">android</span><span class="topic">boss-key</span><span class="topic">csharp</span>
+        <span class="topic">dotnet</span><span class="topic">scrcpy</span><span class="topic">screen-mirroring</span>
+        <span class="topic">windows</span><span class="topic">wpf</span>
+      </div>
+      <div class="divider"></div>
+      <div class="stat">⭐ <b>1</b> star</div>
+      <div class="stat">🍴 <b>0</b> forks</div>
+      <div class="stat">👀 <b>0</b> watching</div>
+      <div class="divider"></div>
+      <div class="stat">📦 <a href="https://github.com/lee19890505/moyucast/releases/latest">Releases · v1.0.3</a></div>
+      <div class="stat">⚖️ <a href="https://github.com/lee19890505/moyucast/blob/main/LICENSE">MIT License</a></div>
+      <div class="divider"></div>
+      <div style="font-size:12px;color:#656d76">
+        本页是离线展示页，图片已内嵌，断网也能打开。<br/>
+        在线仓库：<a href="https://github.com/lee19890505/moyucast">github.com/lee19890505/moyucast</a>
+      </div>
+    </aside>
+  </div>
+
+  <footer>
+    MoyuCast · 摸鱼投屏 &nbsp;|&nbsp; Built with .NET 8 + WPF &nbsp;|&nbsp; Powered by scrcpy 3.3.4
+  </footer>
+</div>
+
+</body>
+</html>

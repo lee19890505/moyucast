@@ -20,6 +20,9 @@ public partial class MainWindow : Window
     private readonly DispatcherTimer _spin;
     private readonly DispatcherTimer _hoverTimer;
     private bool _autoHideArmed;
+    private NativeWin32.RECT _lastHoverRect;
+    private bool _hasLastHoverRect;
+    private DateTime _autoHideSuppressUntil = DateTime.MinValue;
     private DateTime _outsideSince = DateTime.MinValue;
 
     private IntPtr _scrcpyHwnd = IntPtr.Zero;
@@ -683,6 +686,23 @@ public partial class MainWindow : Window
 
         if (!NativeWin32.GetWindowRect(hwnd, out var r)) return;
 
+        // 窗口还在移动（刚启动时 scrcpy 会先出现在默认位置，再被移到记忆位置），
+        // 这期间不参与「鼠标是否离开」的判定，否则会把窗口自身移动误判成鼠标离开。
+        if (_hasLastHoverRect &&
+            (r.Left != _lastHoverRect.Left || r.Top != _lastHoverRect.Top ||
+             r.Right != _lastHoverRect.Right || r.Bottom != _lastHoverRect.Bottom))
+        {
+            _lastHoverRect = r;
+            _autoHideArmed = false;
+            _outsideSince = DateTime.MinValue;
+            return;
+        }
+        _lastHoverRect = r;
+        _hasLastHoverRect = true;
+
+        // 刚开投屏的短暂抑制期，避免窗口还没落位就触发
+        if (DateTime.UtcNow < _autoHideSuppressUntil) return;
+
         NativeWin32.GetCursorPos(out var pt);
         bool inside = pt.X >= r.Left && pt.X <= r.Right && pt.Y >= r.Top && pt.Y <= r.Bottom;
 
@@ -1005,6 +1025,13 @@ public partial class MainWindow : Window
         {
             _autoHideArmed = false;
             _outsideSince = DateTime.MinValue;
+        }
+
+        // 新窗口出现：重置鼠标判定状态，并给自己 1.5 秒落位时间
+        if (h != IntPtr.Zero && h != _scrcpyHwnd)
+        {
+            _hasLastHoverRect = false;
+            _autoHideSuppressUntil = DateTime.UtcNow.AddMilliseconds(1500);
         }
 
         _scrcpyHwnd = h;

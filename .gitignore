@@ -8,7 +8,8 @@ dist/
 
 # Portable package (contains binaries, ship via Releases instead)
 scrcpy/
-ScrcpyDesk-绿色版/
+MoyuCast-发布版/
+MoyuCast-绿色版/
 
 # OS
 Thumbs.db

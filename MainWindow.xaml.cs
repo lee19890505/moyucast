@@ -832,6 +832,7 @@ public partial class MainWindow : Window
     private System.Windows.Forms.ContextMenuStrip _trayMenu;
     private bool _trayHintShown;
     private bool _bossHidden;
+    private bool _bossMainWasHidden;   // 进入老板模式前，主窗口是否已在托盘
     private NativeWin32.RECT _bossMirrorRect;
     private bool _bossMirrorMinimized;
     private double _bossMainLeft, _bossMainTop, _bossMainW, _bossMainH;
@@ -899,6 +900,7 @@ public partial class MainWindow : Window
                 _bossMirrorMinimized = NativeWin32.IsIconic(mirror);
             }
 
+            _bossMainWasHidden = !IsVisible;
             _bossMainState = WindowState;
             // 最小化/最大化时 Left/Top/Width/Height 不可靠，必须用 RestoreBounds
             var rb = RestoreBounds;
@@ -915,16 +917,19 @@ public partial class MainWindow : Window
         }
         else
         {
-            // ---- 恢复主窗口 ----
-            Show();
-            WindowState = WindowState.Normal;
-            Left = _bossMainLeft;
-            Top = _bossMainTop;
-            Width = SanitizeSize(_bossMainW, Width, 200, 4000);
-            Height = SanitizeSize(_bossMainH, Height, 300, 3000);
-            if (_bossMainState == WindowState.Maximized) WindowState = WindowState.Maximized;
-            else if (_bossMainState == WindowState.Minimized) WindowState = WindowState.Minimized;
-            Activate();
+            // ---- 恢复主窗口（进入前已在托盘的话，保持隐藏）----
+            if (!_bossMainWasHidden)
+            {
+                Show();
+                WindowState = WindowState.Normal;
+                Left = _bossMainLeft;
+                Top = _bossMainTop;
+                Width = SanitizeSize(_bossMainW, Width, 200, 4000);
+                Height = SanitizeSize(_bossMainH, Height, 300, 3000);
+                if (_bossMainState == WindowState.Maximized) WindowState = WindowState.Maximized;
+                else if (_bossMainState == WindowState.Minimized) WindowState = WindowState.Minimized;
+                Activate();
+            }
 
             // ---- 恢复投屏窗口 ----
             if (mirror != IntPtr.Zero)

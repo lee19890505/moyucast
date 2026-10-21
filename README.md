@@ -42,12 +42,13 @@
 ## 界面预览
 
 <p align="center">
-  <img src="docs/screenshots/device.png" width="30%" alt="设备页" />
-  <img src="docs/screenshots/display.png" width="30%" alt="画面页" />
-  <img src="docs/screenshots/appearance.png" width="30%" alt="外观页" />
+  <img src="docs/screenshots/device.png" width="23%" alt="设备页" />
+  <img src="docs/screenshots/display.png" width="23%" alt="画面页" />
+  <img src="docs/screenshots/audio.png" width="23%" alt="声音页" />
+  <img src="docs/screenshots/more.png" width="23%" alt="更多页" />
 </p>
 <p align="center">
-  <img src="docs/screenshots/mirror.png" width="34%" alt="投屏窗口" />
+  <img src="docs/screenshots/mirror.png" width="40%" alt="投屏窗口" />
 </p>
 
 ## 为什么不用原版 scrcpy
@@ -227,12 +228,13 @@ Press it again and everything comes back exactly as it was: same size, same posi
 ## Screenshots
 
 <p align="center">
-  <img src="docs/screenshots/device.png" width="30%" alt="Device tab" />
-  <img src="docs/screenshots/display.png" width="30%" alt="Display tab" />
-  <img src="docs/screenshots/appearance.png" width="30%" alt="Appearance tab" />
+  <img src="docs/screenshots/device.png" width="23%" alt="Device tab" />
+  <img src="docs/screenshots/display.png" width="23%" alt="Display tab" />
+  <img src="docs/screenshots/audio.png" width="23%" alt="Audio tab" />
+  <img src="docs/screenshots/more.png" width="23%" alt="More tab" />
 </p>
 <p align="center">
-  <img src="docs/screenshots/mirror.png" width="34%" alt="Mirror window" />
+  <img src="docs/screenshots/mirror.png" width="40%" alt="Mirror window" />
 </p>
 
 ## Why not plain scrcpy
@@ -380,6 +382,7 @@ This project is only a GUI wrapper around scrcpy. It does not modify or crack an
 Powered by [scrcpy](https://github.com/Genymobile/scrcpy) · [FFmpeg](https://ffmpeg.org/) · [SDL2](https://www.libsdl.org/)
 
 </div>
+
 
 
 

@@ -31,6 +31,8 @@ public partial class MainWindow : Window
     private int _savedBrightness = 29;
     private int _savedBrightnessMode = 1;
     private int _savedScreenTimeout = 30000;
+    private int _savedEpdMode = 1;
+    private int _savedSecondaryMode = 1;
 
     private bool _capturingHotkey;
     private bool _hotkeyRegistered;
@@ -71,6 +73,7 @@ public partial class MainWindow : Window
         _runner.Exited += OnScrcpyExited;
 
         LoadSettingsToUi();
+        RestoreMainGeometry();
         ShowPage(0);
 
         _timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(350) };
@@ -95,6 +98,7 @@ public partial class MainWindow : Window
     {
         if (_settings.MainMaximized) WindowState = WindowState.Maximized;
         RegisterBossKey();
+        RestoreLeftoverDim();
         await RefreshDevicesAsync();
     }
 
@@ -175,6 +179,7 @@ public partial class MainWindow : Window
         RadAudio1.IsChecked = _settings.AudioMode == 1;
         RadAudio2.IsChecked = _settings.AudioMode == 2;
 
+        RefreshScrcpyPathUi();
         _syncing = false;
     }
 
@@ -231,7 +236,6 @@ public partial class MainWindow : Window
             Path.Combine(appDir, "..", "..", "scrcpy"),
             AppContext.BaseDirectory,
             Path.Combine(AppContext.BaseDirectory, "scrcpy"),
-            @"D:\工具\scrcpy-win64-v3.3.4",
             @"C:\scrcpy",
         };
         foreach (var c in candidates)
@@ -503,6 +507,7 @@ public partial class MainWindow : Window
     {
         Dispatcher.Invoke(() =>
         {
+            if (_restartingMirror) return;   // 主动重启（如音频切换）时忽略旧进程退出
             _scrcpyHwnd = IntPtr.Zero;
             _videoAspect = 0;
             BtnStart.Content = "开始投屏";
@@ -529,46 +534,83 @@ public partial class MainWindow : Window
     private int ParseInt(string s, int fallback)
         => int.TryParse(s?.Trim(), out var v) ? v : fallback;
 
-    private void ApplyScreenDim(bool dim)
+    private void ApplyScreenDim(bool dim, string serial = null)
     {
-        if (string.IsNullOrEmpty(_activeSerial)) return;
+        var target = string.IsNullOrEmpty(serial) ? _activeSerial : serial;
+        if (string.IsNullOrEmpty(target)) return;
         try
         {
             if (dim && !_screenDimmed)
             {
-                _savedBrightness = ParseInt(_adb.Run($"-s {_activeSerial} shell settings get system screen_brightness"), 29);
-                _savedBrightnessMode = ParseInt(_adb.Run($"-s {_activeSerial} shell settings get system screen_brightness_mode"), 1);
-                _savedScreenTimeout = ParseInt(_adb.Run($"-s {_activeSerial} shell settings get system screen_off_timeout"), 30000);
+                _savedBrightness = ParseInt(_adb.Run($"-s {target} shell settings get system screen_brightness"), 29);
+                _savedBrightnessMode = ParseInt(_adb.Run($"-s {target} shell settings get system screen_brightness_mode"), 1);
+                _savedScreenTimeout = ParseInt(_adb.Run($"-s {target} shell settings get system screen_off_timeout"), 30000);
+                _savedEpdMode = ParseInt(_adb.Run($"-s {target} shell settings get system screen_brightness_mode_epd"), 1);
+                _savedSecondaryMode = ParseInt(_adb.Run($"-s {target} shell settings get system screen_brightness_mode_secondary"), 1);
 
-                _adb.Run($"-s {_activeSerial} shell svc power stayon true");
-                _adb.Run($"-s {_activeSerial} shell settings put system screen_off_timeout 2147483647");
-                _adb.Run($"-s {_activeSerial} shell settings put system screen_brightness_mode 0");
-                _adb.Run($"-s {_activeSerial} shell settings put system screen_brightness_mode_epd 0");
-                _adb.Run($"-s {_activeSerial} shell settings put system screen_brightness_mode_secondary 0");
-                _adb.Run($"-s {_activeSerial} shell settings put system screen_brightness 0");
-                _adb.Run($"-s {_activeSerial} shell cmd display set-brightness 0");
+                // 先把原始值落盘：即使进程随后被强杀，下次启动也能还原
+                _settings.DimActive = true;
+                _settings.DimSavedBrightness = _savedBrightness;
+                _settings.DimSavedBrightnessMode = _savedBrightnessMode;
+                _settings.DimSavedScreenTimeout = _savedScreenTimeout;
+                _settings.DimSavedEpdMode = _savedEpdMode;
+                _settings.DimSavedSecondaryMode = _savedSecondaryMode;
+                _settings.Save();
+
+                _adb.Run($"-s {target} shell svc power stayon true");
+                _adb.Run($"-s {target} shell settings put system screen_off_timeout 2147483647");
+                _adb.Run($"-s {target} shell settings put system screen_brightness_mode 0");
+                _adb.Run($"-s {target} shell settings put system screen_brightness_mode_epd 0");
+                _adb.Run($"-s {target} shell settings put system screen_brightness_mode_secondary 0");
+                _adb.Run($"-s {target} shell settings put system screen_brightness 0");
+                _adb.Run($"-s {target} shell cmd display set-brightness 0");
                 _screenDimmed = true;
                 AppendLog("已息屏：亮度=0，设备保持唤醒");
             }
             else if (!dim && _screenDimmed)
             {
-                _adb.Run($"-s {_activeSerial} shell cmd display reset-brightness-configuration");
-                _adb.Run($"-s {_activeSerial} shell settings put system screen_brightness {_savedBrightness}");
-                _adb.Run($"-s {_activeSerial} shell settings put system screen_brightness_mode {_savedBrightnessMode}");
-                _adb.Run($"-s {_activeSerial} shell settings put system screen_brightness_mode_epd 1");
-                _adb.Run($"-s {_activeSerial} shell settings put system screen_brightness_mode_secondary 1");
-                _adb.Run($"-s {_activeSerial} shell settings put system screen_off_timeout {_savedScreenTimeout}");
-                _adb.Run($"-s {_activeSerial} shell svc power stayon false");
+                _adb.Run($"-s {target} shell cmd display reset-brightness-configuration");
+                _adb.Run($"-s {target} shell settings put system screen_brightness {_savedBrightness}");
+                _adb.Run($"-s {target} shell settings put system screen_brightness_mode {_savedBrightnessMode}");
+                _adb.Run($"-s {target} shell settings put system screen_brightness_mode_epd {_savedEpdMode}");
+                _adb.Run($"-s {target} shell settings put system screen_brightness_mode_secondary {_savedSecondaryMode}");
+                _adb.Run($"-s {target} shell settings put system screen_off_timeout {_savedScreenTimeout}");
+                _adb.Run($"-s {target} shell svc power stayon false");
                 _screenDimmed = false;
+                _settings.DimActive = false;
+                _settings.Save();
                 AppendLog("已恢复亮度");
             }
         }
         catch (Exception ex) { AppendLog("息屏操作失败: " + ex.Message); }
     }
 
+    /// <summary>启动时如发现上次息屏没来得及恢复，自动补一次</summary>
+    private void RestoreLeftoverDim()
+    {
+        if (!_settings.DimActive) return;
+
+        var serial = !string.IsNullOrEmpty(_settings.LastSerial) ? _settings.LastSerial : _activeSerial;
+        if (string.IsNullOrEmpty(serial))
+        {
+            _settings.DimActive = false;
+            _settings.Save();
+            return;
+        }
+
+        _savedBrightness = _settings.DimSavedBrightness;
+        _savedBrightnessMode = _settings.DimSavedBrightnessMode;
+        _savedScreenTimeout = _settings.DimSavedScreenTimeout;
+        _savedEpdMode = _settings.DimSavedEpdMode;
+        _savedSecondaryMode = _settings.DimSavedSecondaryMode;
+        _screenDimmed = true;   // 让 ApplyScreenDim(false) 走恢复分支
+        ApplyScreenDim(false, serial);
+        AppendLog("检测到上次息屏未恢复，已自动还原屏幕亮度");
+    }
+
     // ---------------- 音频 ----------------
 
-    private void Audio_Checked(object sender, RoutedEventArgs e)
+    private async void Audio_Checked(object sender, RoutedEventArgs e)
     {
         if (_syncing) return;
         int mode = RadAudio1.IsChecked == true ? 1 : (RadAudio2.IsChecked == true ? 2 : 0);
@@ -582,20 +624,32 @@ public partial class MainWindow : Window
             case 2: LblAudioHint.Text = "仅电脑出声，手机会静音。"; break;
         }
 
-        if (_runner.IsRunning && !string.IsNullOrEmpty(_activeSerial))
+        if (!_runner.IsRunning || string.IsNullOrEmpty(_activeSerial)) return;
+
+        var serial = _activeSerial;
+        AppendLog("音频模式切换，正在重启投屏…");
+        BtnStart.IsEnabled = false;
+        _restartingMirror = true;
+        try
         {
-            AppendLog("音频模式切换，正在重启投屏…");
-            try
-            {
-                _runner.Stop();
-                Thread.Sleep(400);
-                var size = _adb.GetScreenSize(_activeSerial);
-                _runner.Start(_settings, _activeSerial, size.w, size.h);
-                _scrcpyHwnd = IntPtr.Zero;
-                _videoAspect = 0;
-                LblStatus.Text = "已按新音频模式重启";
-            }
-            catch (Exception ex) { AppendLog(ex.Message); }
+            // 全部放到后台线程，避免 UI 卡顿（历史 BUG-04）
+            await Task.Run(() => _runner.Stop());
+            await Task.Delay(400);
+            var size = await Task.Run(() => _adb.GetScreenSize(serial));
+            await Task.Run(() => _runner.Start(_settings, serial, size.w, size.h));
+
+            _scrcpyHwnd = IntPtr.Zero;
+            _videoAspect = 0;
+
+            bool ok = await WaitForMirrorWindowAsync(8000);
+            LblStatus.Text = ok ? "已按新音频模式重启" : "重启后未等到投屏窗口，请查看日志";
+            AppendLog(ok ? "音频模式已切换" : "音频模式切换后未检测到投屏窗口");
+        }
+        catch (Exception ex) { AppendLog("重启投屏失败: " + ex.Message); }
+        finally
+        {
+            _restartingMirror = false;
+            BtnStart.IsEnabled = true;
         }
     }
 
@@ -750,6 +804,7 @@ public partial class MainWindow : Window
         _hotkeyRegistered = false;
     }
 
+    private bool _restartingMirror;
     private bool _bossHidden;
     private NativeWin32.RECT _bossMirrorRect;
     private bool _bossMirrorMinimized;
@@ -839,8 +894,8 @@ public partial class MainWindow : Window
             WindowState = WindowState.Normal;
             Left = _bossMainLeft;
             Top = _bossMainTop;
-            Width = Math.Clamp(_bossMainW, 360, 4000);
-            Height = Math.Clamp(_bossMainH, 520, 3000);
+            Width = SanitizeSize(_bossMainW, Width, 200, 4000);
+            Height = SanitizeSize(_bossMainH, Height, 300, 3000);
             if (_bossMainState == WindowState.Maximized) WindowState = WindowState.Maximized;
             else if (_bossMainState == WindowState.Minimized) WindowState = WindowState.Minimized;
             Activate();
@@ -868,12 +923,19 @@ public partial class MainWindow : Window
 
     // ---------------- 窗口几何记忆 ----------------
 
+    /// <summary>校验保存下来的窗口尺寸：NaN / 过小 / 异常值一律回退到当前值</summary>
+    private static double SanitizeSize(double value, double fallback, double min, double max)
+    {
+        if (double.IsNaN(value) || double.IsInfinity(value) || value < min) return fallback;
+        return Math.Min(value, max);
+    }
+
     private void RestoreMainGeometry()
     {
         try
         {
-            Width = Math.Clamp(_settings.MainWidth, 360, 4000);
-            Height = Math.Clamp(_settings.MainHeight, 520, 3000);
+            Width = SanitizeSize(_settings.MainWidth, Width, 200, 4000);
+            Height = SanitizeSize(_settings.MainHeight, Height, 300, 3000);
 
             if (!double.IsNaN(_settings.MainLeft) && !double.IsNaN(_settings.MainTop))
             {
@@ -927,7 +989,19 @@ public partial class MainWindow : Window
     {
         if (_scrcpyHwnd != IntPtr.Zero && NativeWin32.IsWindow(_scrcpyHwnd))
             return _scrcpyHwnd;
-        _scrcpyHwnd = NativeWin32.FindWindowByTitleContains(_runner.WindowTitle);
+
+        var h = NativeWin32.FindWindowByTitleContains(_runner.WindowTitle);
+
+        // 刚发现新投屏窗口时，先解除「鼠标移开自动隐藏」的待命状态。
+        // scrcpy 初始窗口可能恰好盖住鼠标、随后被移到记忆位置，
+        // 会被误判成「鼠标移开」导致刚开投屏就自动隐藏（实测 1 秒即触发）。
+        if (h != IntPtr.Zero && h != _scrcpyHwnd)
+        {
+            _autoHideArmed = false;
+            _outsideSince = DateTime.MinValue;
+        }
+
+        _scrcpyHwnd = h;
         return _scrcpyHwnd;
     }
 

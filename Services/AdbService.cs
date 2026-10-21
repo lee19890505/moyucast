@@ -26,6 +26,11 @@ public class AdbService
         }
     }
 
+    /// <summary>
+    /// 执行 adb 命令。
+    /// stdout/stderr 必须用异步方式同时读，否则一端写满 4KB 管道缓冲就会死锁，
+    /// 超时参数也永远不会生效（历史 BUG-01）。
+    /// </summary>
     public string Run(string args, int timeoutMs = 15000)
     {
         LastError = "";
@@ -50,17 +55,47 @@ public class AdbService
                 StandardErrorEncoding = Encoding.UTF8,
                 WorkingDirectory = string.IsNullOrWhiteSpace(ScrcpyDir) ? Environment.CurrentDirectory : ScrcpyDir
             };
-            using var p = Process.Start(psi);
-            string stdout = p.StandardOutput.ReadToEnd();
-            string stderr = p.StandardError.ReadToEnd();
-            if (!p.WaitForExit(timeoutMs))
+
+            using var p = new Process { StartInfo = psi };
+            var sbOut = new StringBuilder();
+            var sbErr = new StringBuilder();
+            var outDone = new ManualResetEventSlim(false);
+            var errDone = new ManualResetEventSlim(false);
+
+            p.OutputDataReceived += (_, e) =>
+            {
+                if (e.Data == null) { outDone.Set(); return; }
+                lock (sbOut) sbOut.AppendLine(e.Data);
+            };
+            p.ErrorDataReceived += (_, e) =>
+            {
+                if (e.Data == null) { errDone.Set(); return; }
+                lock (sbErr) sbErr.AppendLine(e.Data);
+            };
+
+            p.Start();
+            p.BeginOutputReadLine();
+            p.BeginErrorReadLine();
+
+            bool exited = p.WaitForExit(timeoutMs);
+            if (!exited)
             {
                 try { p.Kill(true); } catch { }
-                LastError = "adb 命令超时";
-                return stdout + stderr;
+                try { p.WaitForExit(2000); } catch { }
+                LastError = "adb 命令超时（" + timeoutMs + "ms）";
             }
-            if (p.ExitCode != 0 && string.IsNullOrWhiteSpace(stdout))
+
+            // 等待异步读取线程把剩余数据排空（最多 2 秒，防止极端情况下再次卡死）
+            outDone.Wait(2000);
+            errDone.Wait(2000);
+
+            string stdout, stderr;
+            lock (sbOut) stdout = sbOut.ToString();
+            lock (sbErr) stderr = sbErr.ToString();
+
+            if (exited && p.ExitCode != 0 && string.IsNullOrWhiteSpace(stdout))
                 LastError = stderr.Trim();
+
             return (stdout + stderr).Trim();
         }
         catch (Exception ex)

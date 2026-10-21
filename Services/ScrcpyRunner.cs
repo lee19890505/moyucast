@@ -85,7 +85,7 @@ public class ScrcpyRunner
         var p = new Process { StartInfo = psi, EnableRaisingEvents = true };
         p.OutputDataReceived += (_, e) => { if (e.Data != null) Log?.Invoke(e.Data); };
         p.ErrorDataReceived += (_, e) => { if (e.Data != null) Log?.Invoke(e.Data); };
-        p.Exited += (_, e) => { int c = -1; try { c = p.ExitCode; } catch { } Exited?.Invoke(c); };
+        p.Exited += (_, e) => { if (!ReferenceEquals(_proc, p)) return; int c = -1; try { c = p.ExitCode; } catch { } Exited?.Invoke(c); };
 
         Log?.Invoke("> scrcpy " + args);
         p.Start();
@@ -96,20 +96,23 @@ public class ScrcpyRunner
 
     public void Stop()
     {
-        if (_proc == null) return;
+        var p = _proc;
+        _proc = null;                 // 先摘掉引用，IsRunning 立即变 false，避免事件竞争
+        if (p == null) return;
+
         try
         {
-            if (!_proc.HasExited)
+            try { p.EnableRaisingEvents = false; } catch { }   // 主动停止时不再触发 Exited
+            if (!p.HasExited)
             {
-                _proc.Kill(true);
-                _proc.WaitForExit(3000);
+                p.Kill(true);
+                p.WaitForExit(3000);
             }
         }
         catch { }
         finally
         {
-            try { _proc.Dispose(); } catch { }
-            _proc = null;
+            try { p.Dispose(); } catch { }
         }
     }
 }

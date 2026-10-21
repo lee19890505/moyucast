@@ -354,7 +354,7 @@
                             <StackPanel>
                                 <Grid>
                                     <TextBlock Text="无线投屏" Style="{StaticResource Label}"/>
-                                    <CheckBox x:Name="ChkWireless" Style="{StaticResource ToggleSwitch}"
+                                    <CheckBox x:Name="ChkWireless" AutomationProperties.Name="无线投屏" Style="{StaticResource ToggleSwitch}"
                                               HorizontalAlignment="Right" Checked="ChkWireless_Changed" Unchecked="ChkWireless_Changed"/>
                                 </Grid>
                                 <StackPanel x:Name="PnlWireless" Visibility="Collapsed" Margin="0,12,0,0">
@@ -404,7 +404,7 @@
                             <StackPanel>
                                 <Grid>
                                     <TextBlock Text="息屏投屏" Style="{StaticResource Label}"/>
-                                    <CheckBox x:Name="ChkScreenOff" Style="{StaticResource ToggleSwitch}"
+                                    <CheckBox x:Name="ChkScreenOff" AutomationProperties.Name="息屏投屏" Style="{StaticResource ToggleSwitch}"
                                               HorizontalAlignment="Right" Checked="ChkScreenOff_Changed" Unchecked="ChkScreenOff_Changed"/>
                                 </Grid>
                                 <TextBlock Style="{StaticResource Hint}" Margin="0,8,0,10" TextWrapping="Wrap"
@@ -418,7 +418,7 @@
                             <StackPanel>
                                 <Grid>
                                     <TextBlock Text="锁定窗口比例（无黑边）" Style="{StaticResource Label}"/>
-                                    <CheckBox x:Name="ChkLockAspect" Style="{StaticResource ToggleSwitch}"
+                                    <CheckBox x:Name="ChkLockAspect" AutomationProperties.Name="锁定窗口比例" Style="{StaticResource ToggleSwitch}"
                                               HorizontalAlignment="Right" IsChecked="True"/>
                                 </Grid>
                                 <Grid Margin="0,14,0,0">
@@ -431,7 +431,7 @@
                                 </Grid>
                                 <Grid Margin="0,14,0,0">
                                     <TextBlock Text="窗口置顶" Style="{StaticResource Label}"/>
-                                    <CheckBox x:Name="ChkTop" Style="{StaticResource ToggleSwitch}" IsChecked="True" HorizontalAlignment="Right" Checked="ChkTop_Changed" Unchecked="ChkTop_Changed"/>
+                                    <CheckBox x:Name="ChkTop" AutomationProperties.Name="窗口置顶" Style="{StaticResource ToggleSwitch}" IsChecked="True" HorizontalAlignment="Right" Checked="ChkTop_Changed" Unchecked="ChkTop_Changed"/>
                                 </Grid>
                             </StackPanel>
                         </Border>
@@ -440,7 +440,7 @@
                             <StackPanel>
                                 <Grid>
                                     <TextBlock Text="模拟物理键盘（打字更可靠）" Style="{StaticResource Label}"/>
-                                    <CheckBox x:Name="ChkUhid" Style="{StaticResource ToggleSwitch}" IsChecked="True" HorizontalAlignment="Right"/>
+                                    <CheckBox x:Name="ChkUhid" AutomationProperties.Name="模拟物理键盘" Style="{StaticResource ToggleSwitch}" IsChecked="True" HorizontalAlignment="Right"/>
                                 </Grid>
                                 <TextBlock Style="{StaticResource Hint}" Margin="0,8,0,0" TextWrapping="Wrap"
                                            Text="使用 HID 键盘模式，几乎所有 App 都能收到按键。关闭则用默认 SDK 模式。"/>
@@ -451,7 +451,7 @@
                             <StackPanel>
                                 <Grid>
                                     <TextBlock Text="鼠标移开自动隐藏" Style="{StaticResource Label}"/>
-                                    <CheckBox x:Name="ChkAutoHide" Style="{StaticResource ToggleSwitch}" HorizontalAlignment="Right"
+                                    <CheckBox x:Name="ChkAutoHide" AutomationProperties.Name="鼠标移开自动隐藏" Style="{StaticResource ToggleSwitch}" HorizontalAlignment="Right"
                                               Checked="ChkAutoHide_Changed" Unchecked="ChkAutoHide_Changed"/>
                                 </Grid>
                                 <TextBlock Style="{StaticResource Hint}" Margin="0,8,0,0" TextWrapping="Wrap"
@@ -494,7 +494,7 @@
                                     <TextBlock x:Name="LblOpacity" Text="100%" Style="{StaticResource Hint}"
                                                HorizontalAlignment="Right" VerticalAlignment="Center"/>
                                 </Grid>
-                                <Slider x:Name="SldOpacity" Minimum="20" Maximum="100" Value="100"
+                                <Slider x:Name="SldOpacity" AutomationProperties.Name="投屏窗口透明度" Minimum="20" Maximum="100" Value="100"
                                         Margin="0,10,0,0" IsSnapToTickEnabled="True" TickFrequency="5"
                                         ValueChanged="SldOpacity_ValueChanged"/>
                                 <TextBlock Style="{StaticResource Hint}" Margin="0,6,0,0" Text="实时生效，只作用于投屏窗口。"/>

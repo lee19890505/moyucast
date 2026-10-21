@@ -20,6 +20,14 @@ public class AppSettings
     public bool KeyboardUhid { get; set; } = true;
     public bool AutoHideOnLeave { get; set; } = false;
 
+    // ---- 息屏状态（防止进程被强杀后手机停在 0 亮度）----
+    public bool DimActive { get; set; } = false;
+    public int DimSavedBrightness { get; set; } = 29;
+    public int DimSavedBrightnessMode { get; set; } = 1;
+    public int DimSavedScreenTimeout { get; set; } = 30000;
+    public int DimSavedEpdMode { get; set; } = 1;
+    public int DimSavedSecondaryMode { get; set; } = 1;
+
     // ---- 窗口几何记忆 ----
     public double MainLeft { get; set; } = double.NaN;
     public double MainTop { get; set; } = double.NaN;

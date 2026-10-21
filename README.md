@@ -17,6 +17,10 @@
 ![.NET](https://img.shields.io/badge/.NET-8.0-512BD4?style=flat-square)
 ![scrcpy](https://img.shields.io/badge/powered%20by-scrcpy%203.3.4-orange?style=flat-square)
 
+<a href="https://github.com/lee19890505/moyucast/releases/latest">
+  <img src="docs/social-preview.png" width="100%" alt="MoyuCast 摸鱼投屏 · 老板键一键隐身" />
+</a>
+
 [🇨🇳 中文](#-中文) · [🇬🇧 English](#-english)
 
 </div>
@@ -382,6 +386,7 @@ This project is only a GUI wrapper around scrcpy. It does not modify or crack an
 Powered by [scrcpy](https://github.com/Genymobile/scrcpy) · [FFmpeg](https://ffmpeg.org/) · [SDL2](https://www.libsdl.org/)
 
 </div>
+
 
 
 

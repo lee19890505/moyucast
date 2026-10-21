@@ -144,17 +144,17 @@ public partial class MainWindow : Window
     {
         var btn = sender as Button;
         if (btn == null) return;
-        int idx = btn == Nav0 ? 0 : btn == Nav1 ? 1 : btn == Nav2 ? 2 : btn == Nav3 ? 3 : 4;
+        int idx = btn == Nav0 ? 0 : btn == Nav1 ? 1 : btn == Nav2 ? 2 : 3;
         ShowPage(idx);
     }
 
     private void ShowPage(int idx)
     {
-        var pages = new UIElement[] { PageDevice, PageDisplay, PageAudio, PageAppearance, PageLog };
+        var pages = new UIElement[] { PageDevice, PageDisplay, PageAudio, PageMore };
         for (int i = 0; i < pages.Length; i++)
             pages[i].Visibility = i == idx ? Visibility.Visible : Visibility.Collapsed;
 
-        var navs = new[] { Nav0, Nav1, Nav2, Nav3, Nav4 };
+        var navs = new[] { Nav0, Nav1, Nav2, Nav3 };
         for (int i = 0; i < navs.Length; i++)
             navs[i].Tag = i == idx ? "active" : null;
     }
@@ -182,6 +182,7 @@ public partial class MainWindow : Window
         RadAudio2.IsChecked = _settings.AudioMode == 2;
 
         LblVersion.Text = $"当前版本 v{UpdateService.CurrentVersion}";
+        LblAbout.Text = $"MoyuCast 摸鱼投屏 v{UpdateService.CurrentVersion}\n基于 scrcpy 3.3.4 的 Windows 图形化投屏控制台\n开源协议：MIT（本项目自身代码）";
         RefreshScrcpyPathUi();
         _syncing = false;
     }
@@ -1086,6 +1087,27 @@ public partial class MainWindow : Window
                 cr.Right + frameW, newH + frameH,
                 NativeWin32.SWP_NOMOVE | NativeWin32.SWP_NOZORDER | NativeWin32.SWP_NOACTIVATE);
         }
+    }
+
+    // ---------------- 日志折叠 ----------------
+
+    private void BtnToggleLog_Click(object sender, RoutedEventArgs e)
+    {
+        bool show = PnlLog.Visibility != Visibility.Visible;
+        PnlLog.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
+        BtnToggleLog.Content = show ? "收起日志 ▴" : "展开日志 ▾";
+        if (show) TxtLog.ScrollToEnd();
+    }
+
+    // ---------------- 关于 ----------------
+
+    private void BtnOpenRepo_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            Process.Start(new ProcessStartInfo("https://github.com/lee19890505/moyucast") { UseShellExecute = true });
+        }
+        catch (Exception ex) { AppendLog("打开项目主页失败: " + ex.Message); }
     }
 
     // ---------------- 检查更新 ----------------

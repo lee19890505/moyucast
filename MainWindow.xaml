@@ -301,12 +301,11 @@
             </Grid>
 
             <Border Grid.Row="1" Margin="12,0,12,8" Background="#26272B" CornerRadius="10" Padding="4">
-                <UniformGrid Columns="5">
+                <UniformGrid Columns="4">
                     <Button x:Name="Nav0" Tag="active" Style="{StaticResource TabButton}" Content="设备" Click="Nav_Click"/>
                     <Button x:Name="Nav1" Style="{StaticResource TabButton}" Content="画面" Click="Nav_Click"/>
                     <Button x:Name="Nav2" Style="{StaticResource TabButton}" Content="声音" Click="Nav_Click"/>
-                    <Button x:Name="Nav3" Style="{StaticResource TabButton}" Content="外观" Click="Nav_Click"/>
-                    <Button x:Name="Nav4" Style="{StaticResource TabButton}" Content="日志" Click="Nav_Click"/>
+                    <Button x:Name="Nav3" Style="{StaticResource TabButton}" Content="更多" Click="Nav_Click"/>
                 </UniformGrid>
             </Border>
 
@@ -400,6 +399,43 @@
                 <ScrollViewer x:Name="PageDisplay" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
                     <StackPanel>
                         <TextBlock Text="画面" FontSize="21" FontWeight="Bold" Foreground="{StaticResource TextBrush}" Margin="2,0,0,12"/>
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <Grid>
+                                    <TextBlock Text="投屏窗口透明度" Style="{StaticResource Label}"/>
+                                    <TextBlock x:Name="LblOpacity" Text="100%" Style="{StaticResource Hint}"
+                                               HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                </Grid>
+                                <Slider x:Name="SldOpacity" AutomationProperties.Name="投屏窗口透明度" Minimum="20" Maximum="100" Value="100"
+                                        Margin="0,10,0,0" IsSnapToTickEnabled="True" TickFrequency="5"
+                                        ValueChanged="SldOpacity_ValueChanged"/>
+                                <TextBlock Style="{StaticResource Hint}" Margin="0,6,0,0" Text="实时生效，只作用于投屏窗口。"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="老板键（隐藏 / 显示投屏窗口）" Style="{StaticResource SectionTitle}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Border Background="#1B1C20" BorderBrush="{StaticResource CardBorderBrush}"
+                                            BorderThickness="1" CornerRadius="8" Height="34">
+                                        <TextBlock x:Name="TxtBossKey" Text="Ctrl+Alt+H"
+                                                   Foreground="{StaticResource TextBrush}" FontSize="13"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <Button Grid.Column="1" x:Name="BtnCaptureKey" Content="录制" Width="64" Height="34"
+                                            Margin="8,0,0,0" Style="{StaticResource GhostButton}" Click="BtnCaptureKey_Click"/>
+                                </Grid>
+                                <TextBlock Style="{StaticResource Hint}" Margin="0,8,0,0" TextWrapping="Wrap"
+                                           Text="点「录制」后按下你想要的组合键，例如 Alt+` 或 Ctrl+Shift+Q。"/>
+                            </StackPanel>
+                        </Border>
+
+                        <TextBlock Text="投屏" Style="{StaticResource SectionTitle}" Margin="2,6,0,8"/>
 
                         <Border Style="{StaticResource Card}">
                             <StackPanel>
@@ -483,82 +519,59 @@
                     </StackPanel>
                 </ScrollViewer>
 
-                <!-- ========== 外观 ========== -->
-                <ScrollViewer x:Name="PageAppearance" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
+                <!-- ========== 更多 ========== -->
+                <ScrollViewer x:Name="PageMore" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
                     <StackPanel>
-                        <TextBlock Text="外观" FontSize="21" FontWeight="Bold" Foreground="{StaticResource TextBrush}" Margin="2,0,0,12"/>
+                        <TextBlock Text="更多" FontSize="21" FontWeight="Bold" Foreground="{StaticResource TextBrush}" Margin="2,0,0,12"/>
 
                         <Border Style="{StaticResource Card}">
                             <StackPanel>
-                                <Grid>
-                                    <TextBlock Text="投屏窗口透明度" Style="{StaticResource Label}"/>
-                                    <TextBlock x:Name="LblOpacity" Text="100%" Style="{StaticResource Hint}"
-                                               HorizontalAlignment="Right" VerticalAlignment="Center"/>
-                                </Grid>
-                                <Slider x:Name="SldOpacity" AutomationProperties.Name="投屏窗口透明度" Minimum="20" Maximum="100" Value="100"
-                                        Margin="0,10,0,0" IsSnapToTickEnabled="True" TickFrequency="5"
-                                        ValueChanged="SldOpacity_ValueChanged"/>
-                                <TextBlock Style="{StaticResource Hint}" Margin="0,6,0,0" Text="实时生效，只作用于投屏窗口。"/>
-                            </StackPanel>
-                        </Border>
-
-                        <Border Style="{StaticResource Card}">
-                            <StackPanel>
-                                <TextBlock Text="老板键（隐藏 / 显示投屏窗口）" Style="{StaticResource SectionTitle}"/>
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-                                    <Border Background="#1B1C20" BorderBrush="{StaticResource CardBorderBrush}"
-                                            BorderThickness="1" CornerRadius="8" Height="34">
-                                        <TextBlock x:Name="TxtBossKey" Text="Ctrl+Alt+H"
-                                                   Foreground="{StaticResource TextBrush}" FontSize="13"
-                                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                    </Border>
-                                    <Button Grid.Column="1" x:Name="BtnCaptureKey" Content="录制" Width="64" Height="34"
-                                            Margin="8,0,0,0" Style="{StaticResource GhostButton}" Click="BtnCaptureKey_Click"/>
-                                </Grid>
-                                <TextBlock Style="{StaticResource Hint}" Margin="0,8,0,0" TextWrapping="Wrap"
-                                           Text="点「录制」后按下你想要的组合键，例如 Alt+` 或 Ctrl+Shift+Q。"/>
-                            </StackPanel>
-                        </Border>
-
-                        <Border Style="{StaticResource Card}">
-                            <StackPanel>
-                                <TextBlock Text="关于 / 更新" Style="{StaticResource SectionTitle}"/>
+                                <TextBlock Text="检查更新" Style="{StaticResource SectionTitle}"/>
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
                                     <TextBlock x:Name="LblVersion" Text="当前版本" Style="{StaticResource Label}"/>
-                                    <Button Grid.Column="1" x:Name="BtnCheckUpdate" Content="检查更新" Width="84" Height="32"
+                                    <Button Grid.Column="1" x:Name="BtnCheckUpdate" AutomationProperties.Name="检查更新"
+                                            Content="检查更新" Width="84" Height="32"
                                             Style="{StaticResource GhostButton}" Click="BtnCheckUpdate_Click"/>
                                 </Grid>
                                 <TextBlock x:Name="LblUpdate" Style="{StaticResource Hint}" Margin="0,8,0,0" TextWrapping="Wrap"
-                                           Text="从 GitHub Releases 获取最新版本。"/>
+                                           Text="从 GitHub Releases 获取最新版本，国内网络自动走镜像。"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <Grid>
+                                    <TextBlock Text="运行日志" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" Margin="2,0,0,0"/>
+                                    <Button x:Name="BtnToggleLog" AutomationProperties.Name="展开或收起日志"
+                                            Content="展开日志 ▾" HorizontalAlignment="Right" Height="28" Padding="10,0"
+                                            Style="{StaticResource GhostButton}" Click="BtnToggleLog_Click"/>
+                                </Grid>
+                                <Border x:Name="PnlLog" Visibility="Collapsed" Height="260" Margin="0,10,0,0"
+                                        Background="#141519" CornerRadius="10" Padding="10"
+                                        BorderBrush="#2E2F34" BorderThickness="1">
+                                    <TextBox x:Name="TxtLog" Background="Transparent" BorderThickness="0"
+                                             Foreground="#8FB8E8" FontFamily="Consolas" FontSize="11.5"
+                                             IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"/>
+                                </Border>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="关于" Style="{StaticResource SectionTitle}"/>
+                                <TextBlock x:Name="LblAbout" Style="{StaticResource Hint}" TextWrapping="Wrap" LineHeight="19"/>
+                                <Button x:Name="BtnOpenRepo" AutomationProperties.Name="打开项目主页"
+                                        Content="打开项目主页" Height="30" Margin="0,10,0,0"
+                                        Style="{StaticResource GhostButton}" Click="BtnOpenRepo_Click"/>
                             </StackPanel>
                         </Border>
                     </StackPanel>
                 </ScrollViewer>
 
-                <!-- ========== 日志 ========== -->
-                <Grid x:Name="PageLog" Visibility="Collapsed">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
-                    <TextBlock Text="日志" FontSize="21" FontWeight="Bold" Foreground="{StaticResource TextBrush}" Margin="2,0,0,12"/>
-                    <Border Grid.Row="1" Background="#141519" CornerRadius="12" Padding="12"
-                            BorderBrush="#2E2F34" BorderThickness="1">
-                        <ScrollViewer VerticalScrollBarVisibility="Auto">
-                            <TextBox x:Name="TxtLog" Background="Transparent" BorderThickness="0"
-                                     Foreground="#8FB8E8" FontFamily="Consolas" FontSize="11.5"
-                                     IsReadOnly="True" TextWrapping="Wrap"/>
-                        </ScrollViewer>
-                    </Border>
-                </Grid>
             </Grid>
 
             <Border Grid.Row="3" Padding="14,10,14,14">

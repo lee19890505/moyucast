@@ -105,7 +105,7 @@ MoyuCast 把这些全部做成了按钮和开关。
 
 - macOS 风格深色主题：红黄绿信号灯、圆角卡片、iOS 风格开关
 - 竖屏比例 430 × 760，可自由拉伸
-- 五个页签：设备 / 画面 / 声音 / 外观 / 日志
+- 四个页签：设备 / 画面 / 声音 / 更多（更新、日志、关于都收在这里，日志点击才展开）
 - 启动投屏有加载动画和耗时记录
 
 ### 🧰 其他
@@ -375,3 +375,4 @@ This project is only a GUI wrapper around scrcpy. It does not modify or crack an
 Powered by [scrcpy](https://github.com/Genymobile/scrcpy) · [FFmpeg](https://ffmpeg.org/) · [SDL2](https://www.libsdl.org/)
 
 </div>
+

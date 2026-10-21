@@ -30,6 +30,32 @@
 - **恢复亮度时 epd / 副屏模式被硬编码为 1**：改为按原值恢复
 - **老板键恢复会把小窗口强行撑大**
 - **刚开投屏就自动进入老板键**：窗口落位期间不再参与「鼠标离开」判定（两处修复）
+
+### English
+
+**Added**
+- Bilingual UI (Chinese / English) with instant in-app switching, no restart
+- System tray icon with minimize-to-tray; tray menu can start/stop mirroring
+- Single-instance lock — launching again just brings the running window forward
+- In-app update check against GitHub Releases, with mirror fallback for mainland China
+- Pixel-art app & tray icon (16–256 px ICO)
+- Automated smoke tests (37 assertions)
+
+**Changed**
+- Navigation reduced from 5 tabs to 4: Device / Display / Audio / More
+- Opacity and boss key moved to the top of the Display page
+- "Appearance" renamed "More": update check + collapsible runtime log + about
+- Removed the standalone Log tab
+
+**Fixed**
+- adb calls could hang forever; timeouts now actually work
+- Saved window geometry was never restored
+- Screen-dim state could survive a crash and leave the phone at 0 brightness
+- Switching audio mode froze the UI for ~700 ms
+- The scrcpy folder was never displayed
+- epd / secondary brightness modes were hard-coded on restore
+- Boss-key restore enlarged small windows
+- Auto-hide fired immediately after starting mirroring
 - 无边框窗口按钮补充无障碍名称
 
 ## [v1.0.2] - 2026-10-20
@@ -52,3 +78,4 @@
 ### 新增
 
 - 首个版本：设备列表、无线投屏、音频三态、息屏、比例锁定、窗口置顶、透明度、老板键、日志
+

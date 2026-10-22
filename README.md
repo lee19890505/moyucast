@@ -232,10 +232,10 @@ Press it again and everything comes back exactly as it was: same size, same posi
 ## Screenshots
 
 <p align="center">
-  <img src="docs/screenshots/device.png" width="23%" alt="Device tab" />
-  <img src="docs/screenshots/display.png" width="23%" alt="Display tab" />
-  <img src="docs/screenshots/audio.png" width="23%" alt="Audio tab" />
-  <img src="docs/screenshots/more.png" width="23%" alt="More tab" />
+  <img src="docs/screenshots/en/device.png" width="23%" alt="Device tab" />
+  <img src="docs/screenshots/en/display.png" width="23%" alt="Display tab" />
+  <img src="docs/screenshots/en/audio.png" width="23%" alt="Audio tab" />
+  <img src="docs/screenshots/en/more.png" width="23%" alt="More tab" />
 </p>
 <p align="center">
   <img src="docs/screenshots/mirror.png" width="40%" alt="Mirror window" />

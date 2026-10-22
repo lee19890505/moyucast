@@ -118,6 +118,47 @@ public static class NativeWin32
     [StructLayout(LayoutKind.Sequential)]
     public struct RECT { public int Left, Top, Right, Bottom; }
 
+    [DllImport("user32.dll")]
+    public static extern short GetAsyncKeyState(int vKey);
+
+    [DllImport("user32.dll")]
+    public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
+
+    [DllImport("user32.dll")]
+    public static extern bool GetGUIThreadInfo(uint idThread, ref GUITHREADINFO lpgui);
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct GUITHREADINFO
+    {
+        public int cbSize;
+        public int flags;
+        public IntPtr hwndActive;
+        public IntPtr hwndFocus;
+        public IntPtr hwndCapture;
+        public IntPtr hwndMenuOwner;
+        public IntPtr hwndMoveSize;
+        public IntPtr hwndCaret;
+        public RECT rcCaret;
+    }
+
+    public const int VK_LBUTTON = 0x01;
+    public const int GUI_INMOVESIZE = 0x00000002;
+
+    /// <summary>鼠标左键是否按住（拖拽/缩放期间不应判定"鼠标离开"）</summary>
+    public static bool IsLeftButtonDown()
+        => (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
+
+    /// <summary>目标窗口所在线程是否正处于"移动/缩放窗口"的模态循环</summary>
+    public static bool IsInMoveSize(IntPtr hwnd)
+    {
+        if (hwnd == IntPtr.Zero) return false;
+        uint tid = GetWindowThreadProcessId(hwnd, out _);
+        if (tid == 0) return false;
+        var info = new GUITHREADINFO { cbSize = Marshal.SizeOf<GUITHREADINFO>() };
+        if (!GetGUIThreadInfo(tid, ref info)) return false;
+        return (info.flags & GUI_INMOVESIZE) != 0;
+    }
+
     [DllImport("imm32.dll")]
     public static extern IntPtr ImmAssociateContext(IntPtr hWnd, IntPtr hIMC);
 

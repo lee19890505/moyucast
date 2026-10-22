@@ -14,7 +14,7 @@
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
     <!-- WinForms 的 DPI 警告：DPI 由 app.manifest 与 WPF 统一处理 -->
     <NoWarn>$(NoWarn);WFAC010</NoWarn>
-    <Version>1.0.3</Version>
+    <Version>1.1.1</Version>
     <Product>MoyuCast 摸鱼投屏</Product>
     <AssemblyTitle>MoyuCast</AssemblyTitle>
     <Company>lee19890505</Company>

@@ -824,6 +824,13 @@ public partial class MainWindow : Window
         _hasLastHoverRect = true;
 
         // 刚开投屏的短暂抑制期，避免窗口还没落位就触发
+
+            // 正在拖动/缩放投屏窗口时，鼠标会短暂跑到窗口外，不能判定为"离开"
+            if (NativeWin32.IsLeftButtonDown() || NativeWin32.IsInMoveSize(hwnd))
+            {
+                _outsideSince = DateTime.MinValue;
+                return;
+            }
         if (DateTime.UtcNow < _autoHideSuppressUntil) return;
 
         NativeWin32.GetCursorPos(out var pt);

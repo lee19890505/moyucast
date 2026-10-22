@@ -25,12 +25,22 @@ jobs:
       - name: Restore
         run: dotnet restore
 
+      - name: Derive version from tag
+        id: ver
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}"
+          if ($tag -match '^v(\d+\.\d+\.\d+)') { $v = $Matches[1] } else { $v = "0.0.0-dev" }
+          Write-Host "Build version: $v"
+          "version=$v" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
       - name: Publish (self-contained single file)
         run: >
           dotnet publish -c Release -r win-x64 --self-contained true
           -p:PublishSingleFile=true
           -p:IncludeNativeLibrariesForSelfExtract=true
           -p:EnableCompressionInSingleFile=true
+          -p:Version=${{ steps.ver.outputs.version }}
           -o dist
 
       - name: Fetch scrcpy

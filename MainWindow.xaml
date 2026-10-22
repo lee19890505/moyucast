@@ -359,12 +359,28 @@
                                               HorizontalAlignment="Right" Checked="ChkWireless_Changed" Unchecked="ChkWireless_Changed"/>
                                 </Grid>
                                 <StackPanel x:Name="PnlWireless" Visibility="Collapsed" Margin="0,12,0,0">
-                                    <Button x:Name="BtnAutoWireless" Content="{Binding [① 一键开启无线投屏], Source={x:Static loc:Loc.Instance}}" Height="36"
-                                            Style="{StaticResource GhostButton}" Click="BtnAutoWireless_Click"/>
-                                    <TextBlock Style="{StaticResource Hint}" Margin="2,6,0,10" TextWrapping="Wrap"
-                                               Text="{Binding [需先用 USB 连接手机一次，会自动读取手机 WiFi IP 并切换为无线。], Source={x:Static loc:Loc.Instance}}"/>
 
-                                    <TextBlock Text="{Binding [或手动连接], Source={x:Static loc:Loc.Instance}}" Style="{StaticResource SectionTitle}"/>
+                                    <!-- 当前状态 -->
+                                    <Border Background="#1B1C20" CornerRadius="8" Padding="10,9" Margin="0,0,0,10">
+                                        <StackPanel Orientation="Horizontal">
+                                            <Ellipse x:Name="WifiDot" Width="8" Height="8" Fill="#8B95A7"
+                                                     VerticalAlignment="Top" Margin="0,5,0,0"/>
+                                            <TextBlock x:Name="LblWifiStatus" Margin="8,0,0,0"
+                                                       Foreground="{StaticResource MutedBrush}" FontSize="11.5"
+                                                       TextWrapping="Wrap" VerticalAlignment="Center"
+                                                       Text="{Binding [未检测到设备], Source={x:Static loc:Loc.Instance}}"/>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- 场景一：USB 已连接，一键转无线 -->
+                                    <Button x:Name="BtnAutoWireless" Height="36"
+                                            Content="{Binding [一键转为无线投屏], Source={x:Static loc:Loc.Instance}}"
+                                            Style="{StaticResource GhostButton}" Click="BtnAutoWireless_Click"/>
+                                    <TextBlock Style="{StaticResource Hint}" Margin="2,6,0,14" TextWrapping="Wrap"
+                                               Text="{Binding [手机已通过 USB 连接时可用：自动读取 WiFi 地址并切换到无线，之后可以拔掉数据线。], Source={x:Static loc:Loc.Instance}}"/>
+
+                                    <!-- 场景二：手动连接 -->
+                                    <TextBlock Text="{Binding [手动连接], Source={x:Static loc:Loc.Instance}}" Style="{StaticResource SectionTitle}"/>
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*"/>
@@ -375,21 +391,57 @@
                                         <TextBox x:Name="TxtPort" Grid.Column="1" Style="{StaticResource DarkTextBox}" Height="34"
                                                  Margin="8,0,0,0" Text="5555"/>
                                     </Grid>
-                                    <Button x:Name="BtnConnect" Content="{Binding [② 连接], Source={x:Static loc:Loc.Instance}}" Height="34" Margin="0,8,0,0"
-                                            Style="{StaticResource GhostButton}" Click="BtnConnect_Click"/>
-
-                                    <Button x:Name="BtnShowPair" Content="{Binding [③ 首次配对（需要手机显示配对码）], Source={x:Static loc:Loc.Instance}}" Height="30" Margin="0,10,0,0"
-                                            Style="{StaticResource GhostButton}" Click="BtnShowPair_Click"/>
-                                    <Grid x:Name="PnlPair" Visibility="Collapsed" Margin="0,8,0,0">
+                                    <Grid Margin="0,8,0,0">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
-                                        <TextBox x:Name="TxtPairCode" Style="{StaticResource DarkTextBox}" Height="34"
-                                                 ToolTip="手机「无线调试 → 使用配对码配对设备」里的 6 位数字"/>
-                                        <Button Grid.Column="1" x:Name="BtnPair" Content="{Binding [配对], Source={x:Static loc:Loc.Instance}}" Width="56" Height="34"
-                                                Margin="8,0,0,0" Style="{StaticResource GhostButton}" Click="BtnPair_Click"/>
+                                        <Button x:Name="BtnReadIp" Height="34" Margin="0,0,4,0"
+                                                Content="{Binding [读取手机 IP], Source={x:Static loc:Loc.Instance}}"
+                                                Style="{StaticResource GhostButton}" Click="BtnReadIp_Click"/>
+                                        <Button Grid.Column="1" x:Name="BtnConnect" Height="34" Margin="4,0,0,0"
+                                                Content="{Binding [连接到该地址], Source={x:Static loc:Loc.Instance}}"
+                                                Style="{StaticResource GhostButton}" Click="BtnConnect_Click"/>
                                     </Grid>
+                                    <TextBlock Style="{StaticResource Hint}" Margin="2,6,0,0" TextWrapping="Wrap"
+                                               Text="{Binding [通过 adb connect 建立无线连接，不需要数据线。首次使用需先完成下方配对。], Source={x:Static loc:Loc.Instance}}"/>
+
+                                    <!-- 场景三：首次配对 -->
+                                    <Button x:Name="BtnShowPair" Height="30" Margin="0,14,0,0"
+                                            Content="{Binding [首次配对（仅 Android 11+ 需要）], Source={x:Static loc:Loc.Instance}}"
+                                            Style="{StaticResource GhostButton}" Click="BtnShowPair_Click"/>
+                                    <StackPanel x:Name="PnlPair" Visibility="Collapsed" Margin="0,8,0,0">
+                                        <Border Background="#1B1C20" CornerRadius="8" Padding="10,9" Margin="0,0,0,10">
+                                            <StackPanel>
+                                                <TextBlock Text="{Binding [在手机上操作：], Source={x:Static loc:Loc.Instance}}"
+                                                           Style="{StaticResource Hint}"/>
+                                                <TextBlock Text="{Binding [设置 → 开发者选项 → 无线调试 → 使用配对码配对设备], Source={x:Static loc:Loc.Instance}}"
+                                                           Foreground="{StaticResource TextBrush}" FontSize="11.5"
+                                                           Margin="0,4,0,0" TextWrapping="Wrap"/>
+                                                <TextBlock Text="{Binding [屏幕会显示 6 位配对码和一个 IP:端口], Source={x:Static loc:Loc.Instance}}"
+                                                           Style="{StaticResource Hint}" Margin="0,4,0,0" TextWrapping="Wrap"/>
+                                            </StackPanel>
+                                        </Border>
+                                        <TextBlock Text="{Binding [配对地址], Source={x:Static loc:Loc.Instance}}"
+                                                   Style="{StaticResource Hint}" Margin="2,0,0,4"/>
+                                        <TextBox x:Name="TxtPairAddr" Style="{StaticResource DarkTextBox}" Height="34"
+                                                 ToolTip="手机显示的配对地址，例如 192.168.8.8:41234"/>
+                                        <TextBlock Text="{Binding [配对码], Source={x:Static loc:Loc.Instance}}"
+                                                   Style="{StaticResource Hint}" Margin="2,10,0,4"/>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBox x:Name="TxtPairCode" Style="{StaticResource DarkTextBox}" Height="34"
+                                                     ToolTip="手机显示的 6 位数字"/>
+                                            <Button Grid.Column="1" x:Name="BtnPair" Width="56" Height="34" Margin="8,0,0,0"
+                                                    Content="{Binding [配对], Source={x:Static loc:Loc.Instance}}"
+                                                    Style="{StaticResource GhostButton}" Click="BtnPair_Click"/>
+                                        </Grid>
+                                        <TextBlock Style="{StaticResource Hint}" Margin="2,8,0,0" TextWrapping="Wrap"
+                                                   Text="{Binding [配对端口是手机随机分配的高位端口，不是 5555；配对只需一次。], Source={x:Static loc:Loc.Instance}}"/>
+                                    </StackPanel>
                                 </StackPanel>
                             </StackPanel>
                         </Border>
@@ -484,6 +536,17 @@
                                            Text="{Binding [使用 HID 键盘模式，几乎所有 App 都能收到按键。关闭则用默认 SDK 模式。], Source={x:Static loc:Loc.Instance}}"/>
                             </StackPanel>
                         </Border>
+                          <Border Style="{StaticResource Card}">
+                              <StackPanel>
+                                  <Grid>
+                                      <TextBlock Text="{Binding [禁用电脑输入法（解决打字无反应）], Source={x:Static loc:Loc.Instance}}" Style="{StaticResource Label}"/>
+                                      <CheckBox x:Name="ChkDisableIme" AutomationProperties.Name="禁用电脑输入法" Style="{StaticResource ToggleSwitch}" IsChecked="True"
+                                                HorizontalAlignment="Right" Checked="ChkDisableIme_Changed" Unchecked="ChkDisableIme_Changed"/>
+                                  </Grid>
+                                  <TextBlock Style="{StaticResource Hint}" Margin="0,8,0,0" TextWrapping="Wrap"
+                                             Text="{Binding [中文输入法会拦截字母键，导致电脑打字没反应。开启后投屏窗口绕过电脑输入法。], Source={x:Static loc:Loc.Instance}}"/>
+                              </StackPanel>
+                          </Border>
 
                         <Border Style="{StaticResource Card}">
                             <StackPanel>

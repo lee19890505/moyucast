@@ -5,6 +5,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Interop;
+using System.Windows.Media;
 using System.Windows.Threading;
 using MoyuCast.Models;
 using MoyuCast.Services;
@@ -39,6 +40,8 @@ public partial class MainWindow : Window
 
     private bool _capturingHotkey;
     private bool _hotkeyRegistered;
+    private IntPtr _savedHimc = IntPtr.Zero;
+    private bool _imeDetached;
     private const int HOTKEY_ID = 0x5A01;
 
     private class DeviceItem
@@ -174,6 +177,7 @@ public partial class MainWindow : Window
         ChkLockAspect.IsChecked = _settings.LockAspect;
         ChkTop.IsChecked = _settings.AlwaysOnTop;
         ChkUhid.IsChecked = _settings.KeyboardUhid;
+        ChkDisableIme.IsChecked = _settings.DisablePcIme;
         ChkAutoHide.IsChecked = _settings.AutoHideOnLeave;
         TxtWidth.Text = _settings.ScrcpyWidth.ToString();
         SldOpacity.Value = Math.Round(_settings.Opacity * 100);
@@ -199,6 +203,7 @@ public partial class MainWindow : Window
         _settings.LockAspect = ChkLockAspect.IsChecked == true;
         _settings.AlwaysOnTop = ChkTop.IsChecked == true;
         _settings.KeyboardUhid = ChkUhid.IsChecked == true;
+        _settings.DisablePcIme = ChkDisableIme.IsChecked == true;
         _settings.AutoHideOnLeave = ChkAutoHide.IsChecked == true;
         _settings.Opacity = SldOpacity.Value / 100.0;
         _settings.BossKey = TxtBossKey.Text.Trim();
@@ -355,6 +360,7 @@ public partial class MainWindow : Window
     {
         if (PnlWireless == null) return;
         PnlWireless.Visibility = ChkWireless.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
+        if (ChkWireless.IsChecked == true) UpdateWifiStatus();
     }
 
     private void BtnShowPair_Click(object sender, RoutedEventArgs e)
@@ -362,6 +368,72 @@ public partial class MainWindow : Window
         PnlPair.Visibility = PnlPair.Visibility == Visibility.Visible ? Visibility.Collapsed : Visibility.Visible;
     }
 
+    /// <summary>根据当前连接情况刷新无线状态徽章</summary>
+    private void UpdateWifiStatus()
+    {
+        if (LblWifiStatus == null) return;
+
+        var devs = (CmbDevice.ItemsSource as List<DeviceItem>) ?? new List<DeviceItem>();
+        var wifi = devs.FirstOrDefault(d => d.Serial.Contains(":"));
+        var usb = devs.FirstOrDefault(d => !d.Serial.Contains(":"));
+
+        Color color;
+        string text;
+
+        if (wifi != null)
+        {
+            color = Color.FromRgb(0x34, 0xC7, 0x59);
+            text = Loc.F("已无线连接 {0}", wifi.Serial);
+            BtnAutoWireless.IsEnabled = false;
+        }
+        else if (usb != null)
+        {
+            color = Color.FromRgb(0x0A, 0x84, 0xFF);
+            text = Loc.F("已通过 USB 连接 {0}，可一键转为无线", usb.Serial);
+            BtnAutoWireless.IsEnabled = true;
+        }
+        else
+        {
+            color = Color.FromRgb(0x8B, 0x95, 0xA7);
+            text = Loc.T("未检测到设备：请先用 USB 连接，或在手机上开启无线调试");
+            BtnAutoWireless.IsEnabled = false;
+        }
+
+        WifiDot.Fill = new SolidColorBrush(color);
+        LblWifiStatus.Text = text;
+    }
+
+    /// <summary>只读取手机 WiFi IP，不建立连接</summary>
+    private async void BtnReadIp_Click(object sender, RoutedEventArgs e)
+    {
+        var usb = (CmbDevice.ItemsSource as List<DeviceItem>)?.FirstOrDefault(x => !x.Serial.Contains(":"));
+        if (usb == null)
+        {
+            LblStatus.Text = Loc.T("请先用 USB 连接手机");
+            AppendLog(Loc.T("读取 IP 需要先通过 USB 连接手机"));
+            return;
+        }
+
+        BtnReadIp.IsEnabled = false;
+        try
+        {
+            var ipOut = await Task.Run(() => _adb.Run($"-s {usb.Serial} shell ip -f inet addr show wlan0"));
+            var m = Regex.Match(ipOut, @"inet\s+(\d+\.\d+\.\d+\.\d+)");
+            if (!m.Success)
+            {
+                AppendLog(Loc.T("读取 WiFi IP 失败：") + ipOut.Replace("\n", " "));
+                LblStatus.Text = Loc.T("读取 IP 失败，请手动填写");
+                return;
+            }
+            var ip = m.Groups[1].Value;
+            TxtIp.Text = ip;
+            LblStatus.Text = Loc.F("已读取手机 IP：{0}", ip);
+            AppendLog(Loc.F("已读取手机 IP：{0}", ip));
+        }
+        finally { BtnReadIp.IsEnabled = true; }
+    }
+
+    /// <summary>USB 已连接时，一键切换为无线并建立连接</summary>
     private async void BtnAutoWireless_Click(object sender, RoutedEventArgs e)
     {
         var usb = (CmbDevice.ItemsSource as List<DeviceItem>)?.FirstOrDefault(x => !x.Serial.Contains(":"));
@@ -373,6 +445,7 @@ public partial class MainWindow : Window
         }
 
         ShowLoading(Loc.T("正在开启无线投屏…"), Loc.T("读取手机 WiFi 地址"));
+        BtnAutoWireless.IsEnabled = false;
         try
         {
             var ipOut = await Task.Run(() => _adb.Run($"-s {usb.Serial} shell ip -f inet addr show wlan0"));
@@ -396,25 +469,69 @@ public partial class MainWindow : Window
 
             ChkWireless.IsChecked = true;
             await RefreshDevicesAsync();
-            LblStatus.Text = r.Contains("connected") ? Loc.F("无线已连接 {0}", ip) : Loc.T("无线连接失败");
+
+            bool ok = r.Contains("connected", StringComparison.OrdinalIgnoreCase);
+            LblStatus.Text = ok ? Loc.F("无线已连接 {0}", $"{ip}:5555") : Loc.T("无线连接失败");
+            if (ok) AppendLog(Loc.T("可以拔掉数据线了"));
         }
         catch (Exception ex) { AppendLog(ex.Message); }
-        finally { HideLoading(); }
+        finally { HideLoading(); UpdateWifiStatus(); }
     }
 
-    private void BtnPair_Click(object sender, RoutedEventArgs e)
+    /// <summary>配对（Android 11+ 无线调试），成功后自动尝试连接</summary>
+    private async void BtnPair_Click(object sender, RoutedEventArgs e)
     {
-        var host = TxtIp.Text.Trim();
-        var port = TxtPort.Text.Trim();
+        var addr = TxtPairAddr.Text.Trim();
         var code = TxtPairCode.Text.Trim();
-        if (host.Length == 0 || code.Length == 0) { LblStatus.Text = Loc.T("请填写 IP 和配对码"); return; }
 
-        var addr = host.Contains(':') ? host : $"{host}:{port}";
-        var r = _adb.Pair(addr, code);
-        AppendLog("pair " + addr + " -> " + r);
-        LblStatus.Text = r.Contains("Successfully") ? Loc.T("配对成功") : Loc.T("配对失败，见日志");
+        if (addr.Length == 0)
+        {
+            LblStatus.Text = Loc.T("请填写配对地址（手机显示的 IP:端口）");
+            return;
+        }
+        if (code.Length < 6)
+        {
+            LblStatus.Text = Loc.T("配对码应为 6 位数字");
+            return;
+        }
+        if (!addr.Contains(":")) addr += ":5555";
+
+        BtnPair.IsEnabled = false;
+        ShowLoading(Loc.T("正在配对…"), addr);
+        try
+        {
+            var r = await Task.Run(() => _adb.Pair(addr, code));
+            AppendLog("pair " + addr + " -> " + r);
+
+            if (!r.Contains("Successfully", StringComparison.OrdinalIgnoreCase))
+            {
+                LblStatus.Text = Loc.T("配对失败，见日志");
+                return;
+            }
+
+            LblStatus.Text = Loc.T("配对成功，正在连接…");
+            var ip = addr.Split(':')[0];
+            TxtIp.Text = ip;
+            TxtPort.Text = "5555";
+
+            var cr = await Task.Run(() => _adb.Connect($"{ip}:5555"));
+            AppendLog($"connect {ip}:5555 -> {cr}");
+
+            await RefreshDevicesAsync();
+            LblStatus.Text = cr.Contains("connected", StringComparison.OrdinalIgnoreCase)
+                ? Loc.F("无线已连接 {0}", $"{ip}:5555")
+                : Loc.T("配对成功，但连接失败，请点「连接到该地址」重试");
+        }
+        catch (Exception ex) { AppendLog(ex.Message); }
+        finally
+        {
+            BtnPair.IsEnabled = true;
+            HideLoading();
+            UpdateWifiStatus();
+        }
     }
 
+    /// <summary>按输入的地址执行 adb connect</summary>
     private async void BtnConnect_Click(object sender, RoutedEventArgs e)
     {
         var host = TxtIp.Text.Trim();
@@ -429,9 +546,15 @@ public partial class MainWindow : Window
             var r = await Task.Run(() => _adb.Connect(addr));
             AppendLog("connect " + addr + " -> " + r);
             await RefreshDevicesAsync();
+
+            bool ok = r.Contains("connected", StringComparison.OrdinalIgnoreCase);
+            LblStatus.Text = ok
+                ? Loc.F("无线已连接 {0}", addr)
+                : Loc.T("连接失败：请确认手机已开无线调试并完成配对");
         }
-        finally { BtnConnect.IsEnabled = true; HideLoading(); }
+        finally { BtnConnect.IsEnabled = true; HideLoading(); UpdateWifiStatus(); }
     }
+
 
     // ---------------- 投屏控制 ----------------
 
@@ -727,6 +850,36 @@ public partial class MainWindow : Window
             _outsideSince = DateTime.MinValue;
             AppendLog(Loc.T("鼠标移开投屏窗口，自动隐藏"));
             ToggleBossMode();
+        }
+    }
+
+    private void ChkDisableIme_Changed(object sender, RoutedEventArgs e)
+    {
+        if (_syncing) return;
+        _settings.DisablePcIme = ChkDisableIme.IsChecked == true;
+        _settings.Save();
+        var hwnd = EnsureScrcpyWindow();
+        if (hwnd != IntPtr.Zero) ApplyPcImeSetting(hwnd);
+    }
+
+    /// <summary>给投屏窗口解绑输入法，让字母键直接送到手机（中文输入法会吞掉字母键）</summary>
+    private void ApplyPcImeSetting(IntPtr hwnd)
+    {
+        if (hwnd == IntPtr.Zero || !NativeWin32.IsWindow(hwnd)) return;
+
+        bool disable = ChkDisableIme.IsChecked == true;
+
+        if (disable && !_imeDetached)
+        {
+            _savedHimc = NativeWin32.ImmAssociateContext(hwnd, IntPtr.Zero);
+            _imeDetached = true;
+            AppendLog("已禁用投屏窗口的输入法（字母键将直达手机）");
+        }
+        else if (!disable && _imeDetached)
+        {
+            NativeWin32.ImmAssociateContext(hwnd, _savedHimc);
+            _imeDetached = false;
+            AppendLog("已恢复投屏窗口的输入法");
         }
     }
 
@@ -1065,6 +1218,7 @@ public partial class MainWindow : Window
                     AppendLog(Loc.T("已恢复上次的投屏窗口位置/大小"));
                 }
 
+                ApplyPcImeSetting(hwnd);
                 NativeWin32.SetTopmost(hwnd, ChkTop.IsChecked == true);
                 NativeWin32.SetAlpha(hwnd, SldOpacity.Value / 100.0);
                 AppendLog(Loc.F("已锁定投屏窗口（比例 {0:0.000}）", _videoAspect));

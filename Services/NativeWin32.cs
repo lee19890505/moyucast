@@ -118,6 +118,15 @@ public static class NativeWin32
     [StructLayout(LayoutKind.Sequential)]
     public struct RECT { public int Left, Top, Right, Bottom; }
 
+    [DllImport("imm32.dll")]
+    public static extern IntPtr ImmAssociateContext(IntPtr hWnd, IntPtr hIMC);
+
+    [DllImport("imm32.dll")]
+    public static extern IntPtr ImmGetContext(IntPtr hWnd);
+
+    [DllImport("imm32.dll")]
+    public static extern bool ImmReleaseContext(IntPtr hWnd, IntPtr hIMC);
+
     public static IntPtr FindWindowByTitleContains(string part)
     {
         IntPtr found = IntPtr.Zero;

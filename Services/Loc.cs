@@ -70,6 +70,46 @@ public class Loc : INotifyPropertyChanged
         ["配对成功"] = "Paired",
         ["配对失败，见日志"] = "Pairing failed, see log",
         ["请填写 IP"] = "Please enter an IP",
+
+        // ---------- 无线投屏 v2 ----------
+        ["未检测到设备"] = "No device detected",
+        ["一键转为无线投屏"] = "Switch to wireless",
+        ["手机已通过 USB 连接时可用：自动读取 WiFi 地址并切换到无线，之后可以拔掉数据线。"] =
+            "Available when the phone is connected over USB: reads its Wi-Fi address and switches to wireless. You can unplug afterwards.",
+        ["手动连接"] = "Manual connection",
+        ["读取手机 IP"] = "Read phone IP",
+        ["连接到该地址"] = "Connect to this address",
+        ["通过 adb connect 建立无线连接，不需要数据线。首次使用需先完成下方配对。"] =
+            "Opens a wireless link via adb connect — no cable needed. First use requires pairing below.",
+        ["首次配对（仅 Android 11+ 需要）"] = "First-time pairing (Android 11+ only)",
+        ["在手机上操作："] = "On your phone:",
+        ["设置 → 开发者选项 → 无线调试 → 使用配对码配对设备"] =
+            "Settings → Developer options → Wireless debugging → Pair device with pairing code",
+        ["屏幕会显示 6 位配对码和一个 IP:端口"] = "It shows a 6-digit code and an IP:port",
+        ["配对地址"] = "Pairing address",
+        ["配对码"] = "Pairing code",
+        ["配对端口是手机随机分配的高位端口，不是 5555；配对只需一次。"] =
+            "The pairing port is a random high port, not 5555. Pairing is only needed once.",
+        ["已无线连接 {0}"] = "Wireless connected: {0}",
+        ["已通过 USB 连接 {0}，可一键转为无线"] = "USB connected: {0} — ready to switch to wireless",
+        ["未检测到设备：请先用 USB 连接，或在手机上开启无线调试"] =
+            "No device: connect over USB first, or enable wireless debugging on the phone",
+        ["读取 IP 需要先通过 USB 连接手机"] = "Reading the IP requires a USB connection",
+        ["已读取手机 IP：{0}"] = "Phone IP: {0}",
+        ["可以拔掉数据线了"] = "You can unplug the cable now",
+        ["请填写配对地址（手机显示的 IP:端口）"] = "Enter the pairing address (IP:port shown on the phone)",
+        ["配对码应为 6 位数字"] = "The pairing code must be 6 digits",
+        ["正在配对…"] = "Pairing…",
+        ["配对成功，正在连接…"] = "Paired, connecting…",
+        ["配对成功，但连接失败，请点「连接到该地址」重试"] =
+            "Paired but connection failed — try \"Connect to this address\"",
+        ["连接失败：请确认手机已开无线调试并完成配对"] =
+            "Connection failed: make sure wireless debugging is on and pairing is done",
+
+        // ---------- 输入法 ----------
+        ["禁用电脑输入法（解决打字无反应）"] = "Disable PC input method (fixes typing)",
+        ["中文输入法会拦截字母键，导致电脑打字没反应。开启后投屏窗口绕过电脑输入法。"] =
+            "A Chinese IME swallows letter keys, so typing does nothing. Enable this to bypass the IME for the mirror window.",
         ["正在连接…"] = "Connecting…",
         ["请填写无线 IP"] = "Please enter the wireless IP",
         ["请先选择设备"] = "Select a device first",

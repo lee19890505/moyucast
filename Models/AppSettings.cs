@@ -20,6 +20,7 @@ public class AppSettings
     public string BossKey { get; set; } = "Ctrl+Alt+H";
     public int ScrcpyWidth { get; set; } = 0;
     public bool KeyboardUhid { get; set; } = true;
+    public bool DisablePcIme { get; set; } = true;
     public bool AutoHideOnLeave { get; set; } = false;
 
     // ---- 息屏状态（防止进程被强杀后手机停在 0 亮度）----

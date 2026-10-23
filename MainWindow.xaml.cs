@@ -799,6 +799,7 @@ public partial class MainWindow : Window
         _outsideSince = DateTime.MinValue;
         _autoHideSuppressUntil = DateTime.UtcNow.AddMilliseconds(1200);
         UpdateAutoHideModeLabel();
+        if (_settings.AutoHideOnLeave) AnimateAutoHidePanelIn();
         AppendLog(_settings.AutoHideOnLeave ? Loc.T("已开启：鼠标移开自动隐藏") : Loc.T("已关闭：鼠标移开自动隐藏"));
     }
 
@@ -834,13 +835,29 @@ public partial class MainWindow : Window
     /// <summary>根据两个开关的状态刷新说明文字</summary>
     private void UpdateAutoHideModeLabel()
     {
+        // 主开关决定子面板是否展开
+        if (PnlAutoHideAdvanced != null)
+            PnlAutoHideAdvanced.Visibility = _settings.AutoHideOnLeave ? Visibility.Visible : Visibility.Collapsed;
+
         if (LblAutoHideMode == null) return;
-        if (!_settings.AutoHideOnLeave)
-            LblAutoHideMode.Text = Loc.T("当前已关闭。打开后：鼠标先移入投屏窗口、再移出才会隐藏。");
-        else if (_settings.AutoHideAggressive)
-            LblAutoHideMode.Text = Loc.T("当前：只要鼠标不在投屏窗口上，持续 0.8 秒就隐藏（无需先移入）。更灵敏，但切到别的窗口时投屏也会消失。");
-        else
-            LblAutoHideMode.Text = Loc.T("当前：需要先移入投屏窗口，再移出才会隐藏（约 0.5 秒）。适合边工作边看。");
+        LblAutoHideMode.Text = _settings.AutoHideAggressive
+            ? Loc.T("打开：无需先移入窗口，不在窗口上持续 0.8 秒就隐藏。")
+            : Loc.T("关闭：需要先移入投屏窗口，再移出才隐藏（约 0.5 秒）。");
+    }
+
+    /// <summary>子面板展开时的淡入 + 轻微上滑</summary>
+    private void AnimateAutoHidePanelIn()
+    {
+        if (PnlAutoHideAdvanced == null) return;
+
+        PnlAutoHideAdvanced.Opacity = 0;
+        var fade = new System.Windows.Media.Animation.DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(160));
+        PnlAutoHideAdvanced.BeginAnimation(UIElement.OpacityProperty, fade);
+
+        var tt = PnlAutoHideAdvanced.RenderTransform as System.Windows.Media.TranslateTransform;
+        if (tt == null) { tt = new System.Windows.Media.TranslateTransform(); PnlAutoHideAdvanced.RenderTransform = tt; }
+        var slide = new System.Windows.Media.Animation.DoubleAnimation(-6, 0, TimeSpan.FromMilliseconds(160));
+        tt.BeginAnimation(System.Windows.Media.TranslateTransform.YProperty, slide);
     }
 
 

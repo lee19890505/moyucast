@@ -219,6 +219,10 @@ public class Loc : INotifyPropertyChanged
             "Minimized to tray. Double-click the tray icon to restore.",
         ["托盘图标初始化失败: "] = "Tray icon init failed: ",
 
+        ["鼠标离开投屏窗口后自动进入老板键隐藏。"] = "Hides everything when the cursor leaves the mirror window.",
+        ["触发方式"] = "How it triggers",
+        ["打开：无需先移入窗口，不在窗口上持续 0.8 秒就隐藏。"] = "On: no need to enter first; hides after 0.8 s outside the window.",
+        ["关闭：需要先移入投屏窗口，再移出才隐藏（约 0.5 秒）。"] = "Off: the cursor must enter the mirror window first, then leave (about 0.5 s).",
         // ---------- 自动隐藏 / 诊断 ----------
         ["离开即隐藏（更灵敏）"] = "Hide as soon as you leave (more sensitive)",
         ["打开后无需先把鼠标移入投屏窗口：只要不在窗口上，持续 0.8 秒就隐藏。"] = "No need to move into the mirror window first: hides after the cursor has been outside it for 0.8 s.",

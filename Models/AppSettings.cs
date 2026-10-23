@@ -22,6 +22,10 @@ public class AppSettings
     public bool KeyboardUhid { get; set; } = true;
     public bool DisablePcIme { get; set; } = true;
     public bool AutoHideOnLeave { get; set; } = false;
+    /// <summary>true = 只要鼠标不在投屏窗口上就隐藏（无需先移入）；false = 必须先移入再移出</summary>
+    public bool AutoHideAggressive { get; set; } = false;
+    /// <summary>是否把自动隐藏的判定写入 app.log</summary>
+    public bool Diagnostics { get; set; } = false;
 
     // ---- 息屏状态（防止进程被强杀后手机停在 0 亮度）----
     public bool DimActive { get; set; } = false;

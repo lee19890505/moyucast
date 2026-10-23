@@ -179,6 +179,10 @@ public partial class MainWindow : Window
         ChkUhid.IsChecked = _settings.KeyboardUhid;
         ChkDisableIme.IsChecked = _settings.DisablePcIme;
         ChkAutoHide.IsChecked = _settings.AutoHideOnLeave;
+        ChkAutoHideAggressive.IsChecked = _settings.AutoHideAggressive;
+        ChkDiagnostics.IsChecked = _settings.Diagnostics;
+        DiagLog.Enabled = _settings.Diagnostics;
+        UpdateAutoHideModeLabel();
         TxtWidth.Text = _settings.ScrcpyWidth.ToString();
         SldOpacity.Value = Math.Round(_settings.Opacity * 100);
         LblOpacity.Text = $"{SldOpacity.Value:0}%";
@@ -205,6 +209,8 @@ public partial class MainWindow : Window
         _settings.KeyboardUhid = ChkUhid.IsChecked == true;
         _settings.DisablePcIme = ChkDisableIme.IsChecked == true;
         _settings.AutoHideOnLeave = ChkAutoHide.IsChecked == true;
+        _settings.AutoHideAggressive = ChkAutoHideAggressive.IsChecked == true;
+        _settings.Diagnostics = ChkDiagnostics.IsChecked == true;
         _settings.Opacity = SldOpacity.Value / 100.0;
         _settings.BossKey = TxtBossKey.Text.Trim();
         _settings.AudioMode = RadAudio1.IsChecked == true ? 1 : (RadAudio2.IsChecked == true ? 2 : 0);
@@ -791,12 +797,61 @@ public partial class MainWindow : Window
         _settings.Save();
         _autoHideArmed = false;
         _outsideSince = DateTime.MinValue;
+        _autoHideSuppressUntil = DateTime.UtcNow.AddMilliseconds(1200);
+        UpdateAutoHideModeLabel();
         AppendLog(_settings.AutoHideOnLeave ? Loc.T("已开启：鼠标移开自动隐藏") : Loc.T("已关闭：鼠标移开自动隐藏"));
     }
+
+    private void ChkAutoHideAggressive_Changed(object sender, RoutedEventArgs e)
+    {
+        if (_syncing) return;
+        _settings.AutoHideAggressive = ChkAutoHideAggressive.IsChecked == true;
+        _settings.Save();
+        _autoHideArmed = false;
+        _outsideSince = DateTime.MinValue;
+        _autoHideSuppressUntil = DateTime.UtcNow.AddMilliseconds(2500);
+        UpdateAutoHideModeLabel();
+        AppendLog(_settings.AutoHideAggressive
+            ? Loc.T("已开启：离开即隐藏（无需先移入投屏窗口）")
+            : Loc.T("已关闭：离开即隐藏（需先移入投屏窗口）"));
+        DiagLog.Write("auto-hide mode changed: aggressive=" + _settings.AutoHideAggressive);
+    }
+
+    private void ChkDiagnostics_Changed(object sender, RoutedEventArgs e)
+    {
+        if (_syncing) return;
+        _settings.Diagnostics = ChkDiagnostics.IsChecked == true;
+        _settings.Save();
+        DiagLog.Enabled = _settings.Diagnostics;
+        if (DiagLog.Enabled)
+        {
+            DiagLog.Write("=== diagnostics enabled ===");
+            DiagLog.Write("autoHide=" + _settings.AutoHideOnLeave + " aggressive=" + _settings.AutoHideAggressive);
+        }
+        AppendLog(_settings.Diagnostics ? Loc.T("已开启：诊断日志") : Loc.T("已关闭：诊断日志"));
+    }
+
+    /// <summary>根据两个开关的状态刷新说明文字</summary>
+    private void UpdateAutoHideModeLabel()
+    {
+        if (LblAutoHideMode == null) return;
+        if (!_settings.AutoHideOnLeave)
+            LblAutoHideMode.Text = Loc.T("当前已关闭。打开后：鼠标先移入投屏窗口、再移出才会隐藏。");
+        else if (_settings.AutoHideAggressive)
+            LblAutoHideMode.Text = Loc.T("当前：只要鼠标不在投屏窗口上，持续 0.8 秒就隐藏（无需先移入）。更灵敏，但切到别的窗口时投屏也会消失。");
+        else
+            LblAutoHideMode.Text = Loc.T("当前：需要先移入投屏窗口，再移出才会隐藏（约 0.5 秒）。适合边工作边看。");
+    }
+
+
+    private string _lastHoverDiag = "";
+    private DateTime _lastHoverDiagAt = DateTime.MinValue;
 
     private void HoverTimer_Tick(object sender, EventArgs e)
     {
         if (!_settings.AutoHideOnLeave) { _autoHideArmed = false; return; }
+
+        EnsureBossStateConsistent();
         if (_bossHidden) return;
 
         var hwnd = EnsureScrcpyWindow();
@@ -809,11 +864,11 @@ public partial class MainWindow : Window
 
         if (!NativeWin32.GetWindowRect(hwnd, out var r)) return;
 
-        // 窗口还在移动（刚启动时 scrcpy 会先出现在默认位置，再被移到记忆位置），
-        // 这期间不参与「鼠标是否离开」的判定，否则会把窗口自身移动误判成鼠标离开。
+        // 窗口还在移动（刚启动时 scrcpy 先出现在默认位置，再被移到记忆位置）时不判定。
+        // 留 2px 容差：避免 1px 抖动导致 _autoHideArmed 被无限重置。
         if (_hasLastHoverRect &&
-            (r.Left != _lastHoverRect.Left || r.Top != _lastHoverRect.Top ||
-             r.Right != _lastHoverRect.Right || r.Bottom != _lastHoverRect.Bottom))
+            (Math.Abs(r.Left - _lastHoverRect.Left) > 2 || Math.Abs(r.Top - _lastHoverRect.Top) > 2 ||
+             Math.Abs(r.Right - _lastHoverRect.Right) > 2 || Math.Abs(r.Bottom - _lastHoverRect.Bottom) > 2))
         {
             _lastHoverRect = r;
             _autoHideArmed = false;
@@ -823,14 +878,13 @@ public partial class MainWindow : Window
         _lastHoverRect = r;
         _hasLastHoverRect = true;
 
-        // 刚开投屏的短暂抑制期，避免窗口还没落位就触发
+        // 拖动 / 缩放投屏窗口期间，鼠标会短暂跑到窗口外，不能判定为"离开"
+        if (NativeWin32.IsLeftButtonDown() || NativeWin32.IsInMoveSize(hwnd))
+        {
+            _outsideSince = DateTime.MinValue;
+            return;
+        }
 
-            // 正在拖动/缩放投屏窗口时，鼠标会短暂跑到窗口外，不能判定为"离开"
-            if (NativeWin32.IsLeftButtonDown() || NativeWin32.IsInMoveSize(hwnd))
-            {
-                _outsideSince = DateTime.MinValue;
-                return;
-            }
         if (DateTime.UtcNow < _autoHideSuppressUntil) return;
 
         NativeWin32.GetCursorPos(out var pt);
@@ -840,25 +894,60 @@ public partial class MainWindow : Window
         {
             _autoHideArmed = true;
             _outsideSince = DateTime.MinValue;
+            LogHoverState(inside, r, pt);
             return;
         }
 
-        if (!_autoHideArmed) return;
+        // 非灵敏模式：必须先进入过投屏窗口，才认为"移开"有效
+        if (!_settings.AutoHideAggressive && !_autoHideArmed)
+        {
+            LogHoverState(inside, r, pt);
+            return;
+        }
 
         if (_outsideSince == DateTime.MinValue)
         {
             _outsideSince = DateTime.UtcNow;
+            LogHoverState(inside, r, pt);
             return;
         }
 
-        if ((DateTime.UtcNow - _outsideSince).TotalMilliseconds >= 500)
+        LogHoverState(inside, r, pt);
+
+        double needMs = _settings.AutoHideAggressive ? 800 : 500;
+        if ((DateTime.UtcNow - _outsideSince).TotalMilliseconds >= needMs)
         {
             _autoHideArmed = false;
             _outsideSince = DateTime.MinValue;
+            DiagLog.Write("auto-hide fired (mode=" + (_settings.AutoHideAggressive ? "aggressive" : "normal") + ")");
             AppendLog(Loc.T("鼠标移开投屏窗口，自动隐藏"));
             ToggleBossMode();
         }
     }
+
+    private void LogHoverState(bool inside, NativeWin32.RECT r, NativeWin32.POINT pt)
+    {
+        if (!DiagLog.Enabled) return;
+        var st = $"inside={inside} armed={_autoHideArmed} aggressive={_settings.AutoHideAggressive} " +
+                 $"rect=({r.Left},{r.Top},{r.Right},{r.Bottom}) cursor=({pt.X},{pt.Y}) " +
+                 $"suppress={DateTime.UtcNow < _autoHideSuppressUntil} boss={_bossHidden}";
+        if (st != _lastHoverDiag || (DateTime.UtcNow - _lastHoverDiagAt).TotalSeconds >= 2)
+        {
+            DiagLog.Write(st);
+            _lastHoverDiag = st;
+            _lastHoverDiagAt = DateTime.UtcNow;
+        }
+    }
+
+    /// <summary>老板键状态自愈：主窗口明明可见却还标记为隐藏时，纠正回来</summary>
+    private void EnsureBossStateConsistent()
+    {
+        if (!_bossHidden || !IsVisible) return;
+        _bossHidden = false;
+        _suppressAspectUntil = DateTime.UtcNow.AddMilliseconds(600);
+        DiagLog.Write("self-heal: _bossHidden reset because main window is visible");
+    }
+
 
     private void ChkDisableIme_Changed(object sender, RoutedEventArgs e)
     {
@@ -1091,25 +1180,32 @@ public partial class MainWindow : Window
                 Activate();
             }
 
-            // ---- 恢复投屏窗口 ----
-            if (mirror != IntPtr.Zero)
-            {
-                NativeWin32.ShowWindow(mirror, NativeWin32.SW_SHOW);
-                NativeWin32.MoveResize(mirror,
-                    _bossMirrorRect.Left, _bossMirrorRect.Top,
-                    _bossMirrorRect.Right - _bossMirrorRect.Left,
-                    _bossMirrorRect.Bottom - _bossMirrorRect.Top);
-                NativeWin32.SetAlpha(mirror, _bossOpacity);
-                if (_bossMirrorMinimized) NativeWin32.ShowWindow(mirror, 6 /* SW_MINIMIZE */);
-                else NativeWin32.SetForegroundWindow(mirror);
-            }
+            RestoreMirrorFromBoss();
 
             _suppressAspectUntil = DateTime.UtcNow.AddMilliseconds(900);
             _autoHideArmed = false;
             _outsideSince = DateTime.MinValue;
+            _autoHideSuppressUntil = DateTime.UtcNow.AddMilliseconds(2500);
             _bossHidden = false;
             AppendLog(Loc.T("老板键：已恢复"));
         }
+    }
+
+
+    /// <summary>把老板键隐藏前的投屏窗口恢复回来（位置 / 大小 / 透明度 / 最小化状态）</summary>
+    private void RestoreMirrorFromBoss()
+    {
+        var mirror = EnsureScrcpyWindow();
+        if (mirror == IntPtr.Zero) return;
+
+        NativeWin32.ShowWindow(mirror, NativeWin32.SW_SHOW);
+        int w = _bossMirrorRect.Right - _bossMirrorRect.Left;
+        int h = _bossMirrorRect.Bottom - _bossMirrorRect.Top;
+        if (w > 0 && h > 0)
+            NativeWin32.MoveResize(mirror, _bossMirrorRect.Left, _bossMirrorRect.Top, w, h);
+        NativeWin32.SetAlpha(mirror, _bossOpacity);
+        if (_bossMirrorMinimized) NativeWin32.ShowWindow(mirror, 6 /* SW_MINIMIZE */);
+        else NativeWin32.SetForegroundWindow(mirror);
     }
 
     // ---------------- 窗口几何记忆 ----------------
@@ -1196,7 +1292,7 @@ public partial class MainWindow : Window
         if (h != IntPtr.Zero && h != _scrcpyHwnd)
         {
             _hasLastHoverRect = false;
-            _autoHideSuppressUntil = DateTime.UtcNow.AddMilliseconds(1500);
+            _autoHideSuppressUntil = DateTime.UtcNow.AddMilliseconds(_settings.AutoHideAggressive ? 3000 : 1500);
         }
 
         _scrcpyHwnd = h;
@@ -1206,6 +1302,7 @@ public partial class MainWindow : Window
     private void Timer_Tick(object sender, EventArgs e)
     {
         if (!_runner.IsRunning) return;
+        EnsureBossStateConsistent();
 
         var hwnd = EnsureScrcpyWindow();
         if (hwnd == IntPtr.Zero) return;
@@ -1306,6 +1403,7 @@ public partial class MainWindow : Window
         BtnCaptureKey.Content = _capturingHotkey ? Loc.T("取消") : Loc.T("录制");
         BtnToggleLog.Content = PnlLog.Visibility == Visibility.Visible ? Loc.T("收起日志 ▴") : Loc.T("展开日志 ▾");
         ApplyAudioHint(_settings.AudioMode);
+        UpdateAutoHideModeLabel();
         UpdateLangButtons();
         UpdateTrayText();
     }
@@ -1478,6 +1576,19 @@ public partial class MainWindow : Window
         Topmost = true;
         Topmost = false;
         Focus();
+
+        // 如果之前是老板键隐藏状态，从托盘叫回来时一并退出该状态，
+        // 否则 _bossHidden 会一直为 true，自动隐藏和比例锁定都会失效。
+        if (_bossHidden)
+        {
+            _bossHidden = false;
+            _autoHideArmed = false;
+            _outsideSince = DateTime.MinValue;
+            _suppressAspectUntil = DateTime.UtcNow.AddMilliseconds(900);
+            _autoHideSuppressUntil = DateTime.UtcNow.AddMilliseconds(2500);
+            RestoreMirrorFromBoss();
+            AppendLog(Loc.T("老板键：已恢复"));
+        }
     }
 
     private void DisposeTray()

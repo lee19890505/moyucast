@@ -219,6 +219,19 @@ public class Loc : INotifyPropertyChanged
             "Minimized to tray. Double-click the tray icon to restore.",
         ["托盘图标初始化失败: "] = "Tray icon init failed: ",
 
+        // ---------- 自动隐藏 / 诊断 ----------
+        ["离开即隐藏（更灵敏）"] = "Hide as soon as you leave (more sensitive)",
+        ["打开后无需先把鼠标移入投屏窗口：只要不在窗口上，持续 0.8 秒就隐藏。"] = "No need to move into the mirror window first: hides after the cursor has been outside it for 0.8 s.",
+        ["当前已关闭。打开后：鼠标先移入投屏窗口、再移出才会隐藏。"] = "Currently off. Once enabled: the cursor must enter the mirror window first, then leave.",
+        ["当前：只要鼠标不在投屏窗口上，持续 0.8 秒就隐藏（无需先移入）。更灵敏，但切到别的窗口时投屏也会消失。"] = "Current: hides after the cursor has been outside the mirror window for 0.8 s (no need to enter first). More sensitive - the mirror may vanish when you switch windows.",
+        ["当前：需要先移入投屏窗口，再移出才会隐藏（约 0.5 秒）。适合边工作边看。"] = "Current: the cursor must enter the mirror window first, then leave (about 0.5 s). Good when working alongside.",
+        ["已开启：离开即隐藏（无需先移入投屏窗口）"] = "On: hide as soon as you leave (no need to enter first)",
+        ["已关闭：离开即隐藏（需先移入投屏窗口）"] = "Off: hide as soon as you leave (requires entering first)",
+        ["记录诊断日志"] = "Write diagnostic log",
+        ["开启后会把自动隐藏的判定写入 app.log，排查问题用。"] = "Writes auto-hide decisions to app.log for troubleshooting.",
+        ["已开启：诊断日志"] = "On: diagnostic log",
+        ["已关闭：诊断日志"] = "Off: diagnostic log",
+
         // ---------- 语言卡片 ----------
         ["界面语言"] = "Language",
         ["中文"] = "中文",

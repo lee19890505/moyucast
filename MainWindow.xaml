@@ -555,8 +555,17 @@
                                     <CheckBox x:Name="ChkAutoHide" AutomationProperties.Name="鼠标移开自动隐藏" Style="{StaticResource ToggleSwitch}" HorizontalAlignment="Right"
                                               Checked="ChkAutoHide_Changed" Unchecked="ChkAutoHide_Changed"/>
                                 </Grid>
+                                <TextBlock x:Name="LblAutoHideMode" Style="{StaticResource Hint}" Margin="0,8,0,0" TextWrapping="Wrap"/>
+
+                                <Border Height="1" Background="{StaticResource CardBorderBrush}" Margin="0,12,0,12"/>
+
+                                <Grid>
+                                    <TextBlock Text="{Binding [离开即隐藏（更灵敏）], Source={x:Static loc:Loc.Instance}}" Style="{StaticResource Label}"/>
+                                    <CheckBox x:Name="ChkAutoHideAggressive" AutomationProperties.Name="离开即隐藏（更灵敏）" Style="{StaticResource ToggleSwitch}" HorizontalAlignment="Right"
+                                              Checked="ChkAutoHideAggressive_Changed" Unchecked="ChkAutoHideAggressive_Changed"/>
+                                </Grid>
                                 <TextBlock Style="{StaticResource Hint}" Margin="0,8,0,0" TextWrapping="Wrap"
-                                           Text="{Binding [鼠标离开投屏窗口超过 0.5 秒，自动进入老板键隐藏状态；按老板键即可恢复。], Source={x:Static loc:Loc.Instance}}"/>
+                                           Text="{Binding [打开后无需先把鼠标移入投屏窗口：只要不在窗口上，持续 0.8 秒就隐藏。], Source={x:Static loc:Loc.Instance}}"/>
                             </StackPanel>
                         </Border>
                     </StackPanel>
@@ -626,6 +635,14 @@
                                             Content="{Binding [展开日志 ▾], Source={x:Static loc:Loc.Instance}}" HorizontalAlignment="Right" Height="28" Padding="10,0"
                                             Style="{StaticResource GhostButton}" Click="BtnToggleLog_Click"/>
                                 </Grid>
+                                <Grid Margin="0,12,0,0">
+                                    <TextBlock Text="{Binding [记录诊断日志], Source={x:Static loc:Loc.Instance}}" Style="{StaticResource Label}"/>
+                                    <CheckBox x:Name="ChkDiagnostics" AutomationProperties.Name="记录诊断日志" Style="{StaticResource ToggleSwitch}" HorizontalAlignment="Right"
+                                              Checked="ChkDiagnostics_Changed" Unchecked="ChkDiagnostics_Changed"/>
+                                </Grid>
+                                <TextBlock Style="{StaticResource Hint}" Margin="0,6,0,0" TextWrapping="Wrap"
+                                           Text="{Binding [开启后会把自动隐藏的判定写入 app.log，排查问题用。], Source={x:Static loc:Loc.Instance}}"/>
+
                                 <Border x:Name="PnlLog" Visibility="Collapsed" Height="260" Margin="0,10,0,0"
                                         Background="#141519" CornerRadius="10" Padding="10"
                                         BorderBrush="#2E2F34" BorderThickness="1">

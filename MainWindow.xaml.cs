@@ -1051,6 +1051,8 @@ public partial class MainWindow : Window
     private void HoverTimer_Tick(object sender, EventArgs e)
     {
         if (!_settings.AutoHideOnLeave) { _autoHideArmed = false; return; }
+        // 锁屏模式下手机本来就锁着、鼠标通常不在投屏窗口上，自动隐藏会让窗口刚出来就消失
+        if (_settings.DisplayMode == "lock" && _runner.IsRunning) { _autoHideArmed = false; return; }
 
         EnsureBossStateConsistent();
         if (_bossHidden) return;

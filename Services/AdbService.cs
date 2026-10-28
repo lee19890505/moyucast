@@ -168,5 +168,47 @@ public class AdbService
         return (0, 0);
     }
 
+    public int GetScreenDpi(string serial)
+    {
+        var o = Run($"-s {serial} shell wm density", 10000);
+        var m = Regex.Match(o, @"(\\d+)");
+        return m.Success ? int.Parse(m.Groups[1].Value) : 0;
+    }
+
+    /// <summary>执行 adb 命令并把 stdout 以二进制返回（取 APK 图标等二进制数据用）</summary>
+    public byte[] RunBinary(string args, int timeoutMs = 20000)
+    {
+        try
+        {
+            var psi = new ProcessStartInfo
+            {
+                FileName = AdbExe,
+                Arguments = args,
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true,
+                WorkingDirectory = string.IsNullOrWhiteSpace(ScrcpyDir) ? Environment.CurrentDirectory : ScrcpyDir
+            };
+            using var p = new Process { StartInfo = psi };
+            p.Start();
+            using var ms = new MemoryStream();
+            var readTask = p.StandardOutput.BaseStream.CopyToAsync(ms);
+            var errTask = p.StandardError.ReadToEndAsync();
+            if (!p.WaitForExit(timeoutMs))
+            {
+                try { p.Kill(true); } catch { }
+                return Array.Empty<byte>();
+            }
+            readTask.Wait(3000);
+            errTask.Wait(1000);
+            return ms.ToArray();
+        }
+        catch
+        {
+            return Array.Empty<byte>();
+        }
+    }
+
     public bool IsWirelessSerial(string serial) => serial.Contains(":");
 }

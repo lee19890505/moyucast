@@ -12,6 +12,10 @@ public class AppSettings
     public string LastWirelessIp { get; set; } = "";
     public int AudioMode { get; set; } = 0;
     public bool TurnScreenOff { get; set; } = false;
+    public string DisplayMode { get; set; } = "mirror";
+    public string LastLockApp { get; set; } = "";
+    public List<string> StarredApps { get; set; } = new();
+    public Dictionary<string, string> AppAliases { get; set; } = new();
     public bool LockAspect { get; set; } = true;
     public bool AlwaysOnTop { get; set; } = true;
     public bool StayAwake { get; set; } = true;
@@ -28,6 +32,9 @@ public class AppSettings
     public bool Diagnostics { get; set; } = false;
 
     // ---- 息屏状态（防止进程被强杀后手机停在 0 亮度）----
+    /// <summary>锁屏模式是否改过 stay_on_while_plugged_in（用于崩溃后还原）</summary>
+    public bool StayOnActive { get; set; } = false;
+    public int StayOnSaved { get; set; } = 0;
     public bool DimActive { get; set; } = false;
     public int DimSavedBrightness { get; set; } = 29;
     public int DimSavedBrightnessMode { get; set; } = 1;

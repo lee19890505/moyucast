@@ -16,7 +16,7 @@ public class ScrcpyRunner
 
     public string WindowTitle { get; private set; } = "MoyuCast-Mirror";
 
-    public string BuildArguments(AppSettings s, string serial, int screenW, int screenH)
+    public string BuildArguments(AppSettings s, string serial, int screenW, int screenH, int dpi = 0)
     {
         var a = new List<string>();
         a.Add("--window-title");
@@ -30,7 +30,7 @@ public class ScrcpyRunner
 
         if (s.StayAwake) a.Add("--stay-awake");
         if (s.AlwaysOnTop) a.Add("--always-on-top");
-        if (s.TurnScreenOff) a.Add("--turn-screen-off");
+if (s.DisplayMode != "lock" && s.TurnScreenOff) a.Add("--turn-screen-off");
 
         // 音频
         switch (s.AudioMode)
@@ -57,10 +57,21 @@ public class ScrcpyRunner
             a.Add(s.ScrcpyWidth.ToString());
         }
 
+        // 锁屏模式：新建虚拟显示（物理屏可以真锁屏）
+        if (s.DisplayMode == "lock")
+        {
+            int w = screenW > 0 ? screenW : 1080;
+            int h = screenH > 0 ? screenH : 1920;
+            int d = dpi > 0 ? dpi : 320;
+            a.Add($"--new-display={w}x{h}/{d}");
+            if (!string.IsNullOrWhiteSpace(s.LastLockApp))
+                a.Add($"--start-app={s.LastLockApp}");
+        }
+
         return string.Join(" ", a);
     }
 
-    public void Start(AppSettings s, string serial, int screenW, int screenH)
+    public void Start(AppSettings s, string serial, int screenW, int screenH, int dpi = 0)
     {
         Stop();
 
@@ -68,7 +79,7 @@ public class ScrcpyRunner
         if (!File.Exists(exe))
             throw new FileNotFoundException("找不到 scrcpy.exe", exe);
 
-        string args = BuildArguments(s, serial, screenW, screenH);
+        string args = BuildArguments(s, serial, screenW, screenH, dpi);
         var psi = new ProcessStartInfo
         {
             FileName = exe,

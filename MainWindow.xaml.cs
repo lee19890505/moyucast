@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Windows;
@@ -55,6 +56,7 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         InitTray();
+        LstApps.ItemsSource = _appItems;
 
         _settings = AppSettings.Load();
         _settings.ScrcpyDir = ResolveScrcpyDir(_settings.ScrcpyDir);
@@ -106,7 +108,9 @@ public partial class MainWindow : Window
         if (_settings.MainMaximized) WindowState = WindowState.Maximized;
         RegisterBossKey();
         RestoreLeftoverDim();
+        RestoreLeftoverStayOn();
         await RefreshDevicesAsync();
+        if (_settings.DisplayMode == "lock") _ = RefreshAppsAsync();
     }
 
     private void OnClosing(object sender, System.ComponentModel.CancelEventArgs e)
@@ -114,7 +118,7 @@ public partial class MainWindow : Window
         SaveUiToSettings();
         SaveGeometry();
         _settings.Save();
-        ApplyScreenDim(false);
+        RestoreStayOn();
         _runner.Stop();
         UnregisterBossKey();
         DisposeTray();
@@ -173,7 +177,6 @@ public partial class MainWindow : Window
         ChkWireless.IsChecked = _settings.Wireless;
         PnlWireless.Visibility = _settings.Wireless ? Visibility.Visible : Visibility.Collapsed;
         TxtIp.Text = _settings.LastWirelessIp;
-        ChkScreenOff.IsChecked = _settings.TurnScreenOff;
         ChkLockAspect.IsChecked = _settings.LockAspect;
         ChkTop.IsChecked = _settings.AlwaysOnTop;
         ChkUhid.IsChecked = _settings.KeyboardUhid;
@@ -183,6 +186,7 @@ public partial class MainWindow : Window
         ChkDiagnostics.IsChecked = _settings.Diagnostics;
         DiagLog.Enabled = _settings.Diagnostics;
         UpdateAutoHideModeLabel();
+        UpdateModeUi();
         TxtWidth.Text = _settings.ScrcpyWidth.ToString();
         SldOpacity.Value = Math.Round(_settings.Opacity * 100);
         LblOpacity.Text = $"{SldOpacity.Value:0}%";
@@ -203,7 +207,6 @@ public partial class MainWindow : Window
     {
         _settings.Wireless = ChkWireless.IsChecked == true;
         _settings.LastWirelessIp = TxtIp.Text.Trim();
-        _settings.TurnScreenOff = ChkScreenOff.IsChecked == true;
         _settings.LockAspect = ChkLockAspect.IsChecked == true;
         _settings.AlwaysOnTop = ChkTop.IsChecked == true;
         _settings.KeyboardUhid = ChkUhid.IsChecked == true;
@@ -582,6 +585,23 @@ public partial class MainWindow : Window
 
         if (string.IsNullOrEmpty(serial)) { LblStatus.Text = Loc.T("请先选择设备"); return; }
 
+        if (_settings.DisplayMode == "lock")
+        {
+            if (string.IsNullOrEmpty(_settings.LastLockApp))
+            {
+                LblStatus.Text = Loc.T("请先在锁屏模式里选择一个应用");
+                return;
+            }
+            var trust = _adb.Run($"-s {serial} shell dumpsys trust", 10000);
+            if (trust.Contains("deviceLocked=1"))
+            {
+                LblStatus.Text = Loc.T("手机当前已锁屏，请先解锁再开始投屏");
+                AppendLog(Loc.T("锁屏模式下需要先解锁手机，才能启动 App"));
+                return;
+            }
+            ApplyStayOn(serial);
+        }
+
         SaveUiToSettings();
         _settings.Save();
         _activeSerial = serial;
@@ -595,7 +615,8 @@ public partial class MainWindow : Window
             await Task.Run(() =>
             {
                 var size = _adb.GetScreenSize(serial);
-                _runner.Start(_settings, serial, size.w, size.h);
+                var dpi = _adb.GetScreenDpi(serial);
+                _runner.Start(_settings, serial, size.w, size.h, dpi);
             });
 
             BtnStart.Content = Loc.T("停止投屏");
@@ -605,7 +626,13 @@ public partial class MainWindow : Window
             bool ok = await WaitForMirrorWindowAsync(8000);
             AppendLog(ok ? Loc.F("投屏就绪（{0} ms）", sw.ElapsedMilliseconds) : Loc.T("投屏窗口未出现，请查看日志"));
 
-            if (ChkScreenOff.IsChecked == true) ApplyScreenDim(true);
+            if (_settings.DisplayMode == "lock")
+            {
+                await Task.Delay(2500);
+                _adb.Run($"-s {serial} shell input keyevent 26");
+                LblStatus.Text = Loc.T("已锁屏（投屏中）");
+                AppendLog(Loc.T("已发送锁屏命令，物理屏已关闭，投屏保持运行"));
+            }
         }
         catch (Exception ex)
         {
@@ -632,7 +659,7 @@ public partial class MainWindow : Window
 
     private void StopMirroring(string status)
     {
-        ApplyScreenDim(false);
+        RestoreStayOn();
         _runner.Stop();
         _scrcpyHwnd = IntPtr.Zero;
         _videoAspect = 0;
@@ -652,24 +679,181 @@ public partial class MainWindow : Window
             BtnStart.Content = Loc.T("开始投屏");
             UpdateTrayText();
             LblStatus.Text = Loc.F("投屏已退出（{0}）", code);
-            ApplyScreenDim(false);
+        RestoreStayOn();
         });
+    }
+
+    // ---------------- 投屏模式 / 保持唤醒 ----------------
+
+    private bool _stayOnSaved;
+    private int _savedStayOn;
+    private List<AppItem> _appList = new();
+    private readonly ObservableCollection<AppItem> _appItems = new();
+    private bool _appsLoading;
+
+    private string GetSelectedSerial()
+    {
+        if (ChkWireless.IsChecked == true)
+        {
+            var host = TxtIp.Text.Trim();
+            if (host.Length == 0) return "";
+            return host.Contains(':' ) ? host : $"{host}:{TxtPort.Text.Trim()}";
+        }
+        return (CmbDevice.SelectedItem as DeviceItem)?.Serial ?? "";
+    }
+
+    private void BtnModeMirror_Click(object sender, RoutedEventArgs e) => SetDisplayMode("mirror");
+    private void BtnModeLock_Click(object sender, RoutedEventArgs e) => SetDisplayMode("lock");
+
+    private void SetDisplayMode(string mode)
+    {
+        if (_settings.DisplayMode == mode) return;
+        _settings.DisplayMode = mode;
+        _settings.Save();
+        UpdateModeUi();
+        if (_runner.IsRunning)
+        {
+            StopMirroring(Loc.T("已停止"));
+            LblStatus.Text = Loc.T("投屏模式已切换，请重新开始投屏");
+        }
+        if (mode == "lock") _ = RefreshAppsAsync();
+    }
+
+    private void UpdateModeUi()
+    {
+        if (PnlModeMirror == null || PnlModeLock == null) return;
+        bool lockMode = _settings.DisplayMode == "lock";
+        PnlModeMirror.Visibility = lockMode ? Visibility.Collapsed : Visibility.Visible;
+        PnlModeLock.Visibility = lockMode ? Visibility.Visible : Visibility.Collapsed;
+        var normal = (System.Windows.Media.Brush)FindResource("TextBrush");
+        var muted = (System.Windows.Media.Brush)FindResource("MutedBrush");
+        BtnModeMirror.FontWeight = lockMode ? FontWeights.Normal : FontWeights.SemiBold;
+        BtnModeLock.FontWeight = lockMode ? FontWeights.SemiBold : FontWeights.Normal;
+        BtnModeMirror.Foreground = lockMode ? muted : normal;
+        BtnModeLock.Foreground = lockMode ? normal : muted;
+        if (lockMode && _appList.Count == 0 && !_appsLoading) _ = RefreshAppsAsync();
+    }
+
+    private void ApplyStayOn(string serial)
+    {
+        if (string.IsNullOrEmpty(serial)) return;
+        _savedStayOn = ParseInt(_adb.Run($"-s {serial} shell settings get global stay_on_while_plugged_in"), 0);
+        _stayOnSaved = true;
+        _settings.StayOnActive = true;
+        _settings.StayOnSaved = _savedStayOn;
+        _settings.Save();
+        _adb.Run($"-s {serial} shell svc power stayon true");
+        AppendLog(Loc.T("已开启保持唤醒（防止锁屏后休眠）"));
+    }
+
+    private void RestoreStayOn(string serial = null)
+    {
+        var target = string.IsNullOrEmpty(serial) ? _activeSerial : serial;
+        if (!_stayOnSaved || string.IsNullOrEmpty(target)) return;
+        _adb.Run($"-s {target} shell settings put global stay_on_while_plugged_in {_savedStayOn}");
+        _stayOnSaved = false;
+        _settings.StayOnActive = false;
+        _settings.Save();
+        AppendLog(Loc.T("已恢复保持唤醒设置"));
+    }
+
+    private void RestoreLeftoverStayOn()
+    {
+        if (!_settings.StayOnActive) return;
+        var serial = string.IsNullOrEmpty(_settings.LastSerial) ? "" : _settings.LastSerial;
+        if (string.IsNullOrEmpty(serial)) { _settings.StayOnActive = false; _settings.Save(); return; }
+        _stayOnSaved = true;
+        _savedStayOn = _settings.StayOnSaved;
+        RestoreStayOn(serial);
+    }
+
+    // ---------------- 锁屏模式的 App 列表 ----------------
+
+    private async void BtnRefreshApps_Click(object sender, RoutedEventArgs e) => await RefreshAppsAsync();
+
+    private async Task RefreshAppsAsync()
+    {
+        if (_appsLoading) return;
+        var serial = GetSelectedSerial();
+        if (string.IsNullOrEmpty(serial))
+        {
+            AppendLog(Loc.T("请先选择设备再加载应用列表"));
+            return;
+        }
+
+        _appsLoading = true;
+        BtnRefreshApps.IsEnabled = false;
+        try
+        {
+            var items = await AppListService.LoadAsync(_adb, serial, _settings, CancellationToken.None);
+            _appList = items;
+            _appItems.Clear();
+            foreach (var it in _appList) _appItems.Add(it);
+
+            if (!string.IsNullOrEmpty(_settings.LastLockApp))
+                LstApps.SelectedItem = _appList.FirstOrDefault(x => x.Package == _settings.LastLockApp);
+
+            AppendLog(Loc.F("已加载 {0} 个可启动应用", _appList.Count));
+            _ = LoadAppIconsAsync(serial);
+        }
+        catch (Exception ex)
+        {
+            AppendLog("加载应用列表失败: " + ex.Message);
+        }
+        finally
+        {
+            _appsLoading = false;
+            BtnRefreshApps.IsEnabled = true;
+        }
+    }
+
+    /// <summary>后台逐个提取图标（约 44% 的 App 能拿到，其余保持字母头像）</summary>
+    private async Task LoadAppIconsAsync(string serial)
+    {
+        try
+        {
+            var count = await Task.Run(() => AppListService.SyncIcons(_adb, serial, CancellationToken.None));
+            AppendLog(Loc.F("已提取 {0} 个应用图标", count));
+
+            foreach (var item in _appList)
+            {
+                var path = Path.Combine(AppListService.IconCacheDir, item.Package + ".png");
+                if (File.Exists(path)) item.IconPath = path;
+            }
+        }
+        catch { }
+    }
+
+    private void BtnStarApp_Click(object sender, RoutedEventArgs e)
+    {
+        if (!(sender is FrameworkElement fe) || !(fe.Tag is AppItem item)) return;
+        item.IsStarred = !item.IsStarred;
+
+        var set = new HashSet<string>(_settings.StarredApps ?? new List<string>());
+        if (item.IsStarred) set.Add(item.Package); else set.Remove(item.Package);
+        _settings.StarredApps = set.ToList();
+        _settings.Save();
+
+        var selected = (LstApps.SelectedItem as AppItem)?.Package;
+        _appList = AppListService.Sort(_appList, _settings);
+            _appItems.Clear();
+            foreach (var it in _appList) _appItems.Add(it);
+        if (!string.IsNullOrEmpty(selected))
+            LstApps.SelectedItem = _appList.FirstOrDefault(x => x.Package == selected);
+    }
+
+    private void LstApps_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (LstApps.SelectedItem is AppItem item)
+        {
+            _settings.LastLockApp = item.Package;
+            _settings.Save();
+        }
     }
 
     // ---------------- 息屏（亮度归零 + 保持唤醒）----------------
 
-    private void ChkScreenOff_Changed(object sender, RoutedEventArgs e)
-    {
-        if (_syncing) return;
-        if (_runner.IsRunning) ApplyScreenDim(ChkScreenOff.IsChecked == true);
-    }
 
-    private void BtnApplyDim_Click(object sender, RoutedEventArgs e)
-    {
-        if (string.IsNullOrEmpty(_activeSerial)) { LblStatus.Text = Loc.T("请先开始投屏"); return; }
-        ApplyScreenDim(!_screenDimmed);
-        ChkScreenOff.IsChecked = _screenDimmed;
-    }
 
     private int ParseInt(string s, int fallback)
         => int.TryParse(s?.Trim(), out var v) ? v : fallback;

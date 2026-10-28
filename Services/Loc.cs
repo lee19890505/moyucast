@@ -22,6 +22,7 @@ public class Loc : INotifyPropertyChanged
         ["画面"] = "Display",
         ["声音"] = "Audio",
         ["更多"] = "More",
+        ["设置"] = "Settings",
         ["关于"] = "About",
         ["投屏"] = "Mirroring",
 

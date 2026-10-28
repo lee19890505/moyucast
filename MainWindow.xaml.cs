@@ -56,7 +56,7 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         InitTray();
-        LstApps.ItemsSource = _appItems;
+        CmbApps.ItemsSource = _appItems;
 
         _settings = AppSettings.Load();
         _settings.ScrcpyDir = ResolveScrcpyDir(_settings.ScrcpyDir);
@@ -160,7 +160,7 @@ public partial class MainWindow : Window
 
     private void ShowPage(int idx)
     {
-        var pages = new UIElement[] { PageDevice, PageDisplay, PageAudio, PageMore };
+        var pages = new UIElement[] { PageDevice, PageDisplay, PageSettings, PageMore };
         for (int i = 0; i < pages.Length; i++)
             pages[i].Visibility = i == idx ? Visibility.Visible : Visibility.Collapsed;
 
@@ -791,7 +791,7 @@ public partial class MainWindow : Window
             foreach (var it in _appList) _appItems.Add(it);
 
             if (!string.IsNullOrEmpty(_settings.LastLockApp))
-                LstApps.SelectedItem = _appList.FirstOrDefault(x => x.Package == _settings.LastLockApp);
+                CmbApps.SelectedItem = _appList.FirstOrDefault(x => x.Package == _settings.LastLockApp);
 
             AppendLog(Loc.F("已加载 {0} 个可启动应用", _appList.Count));
             _ = LoadAppIconsAsync(serial);
@@ -834,17 +834,17 @@ public partial class MainWindow : Window
         _settings.StarredApps = set.ToList();
         _settings.Save();
 
-        var selected = (LstApps.SelectedItem as AppItem)?.Package;
+        var selected = (CmbApps.SelectedItem as AppItem)?.Package;
         _appList = AppListService.Sort(_appList, _settings);
             _appItems.Clear();
             foreach (var it in _appList) _appItems.Add(it);
         if (!string.IsNullOrEmpty(selected))
-            LstApps.SelectedItem = _appList.FirstOrDefault(x => x.Package == selected);
+            CmbApps.SelectedItem = _appList.FirstOrDefault(x => x.Package == selected);
     }
 
-    private void LstApps_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private void CmbApps_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (LstApps.SelectedItem is AppItem item)
+        if (CmbApps.SelectedItem is AppItem item)
         {
             _settings.LastLockApp = item.Package;
             _settings.Save();
@@ -1815,5 +1815,7 @@ public partial class MainWindow : Window
         TxtLog.ScrollToEnd();
     }
 }
+
+
 
 

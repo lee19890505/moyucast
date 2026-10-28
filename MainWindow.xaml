@@ -304,8 +304,8 @@
             <Border Grid.Row="1" Margin="12,0,12,8" Background="#26272B" CornerRadius="10" Padding="4">
                 <UniformGrid Columns="4">
                     <Button x:Name="Nav0" Tag="active" Style="{StaticResource TabButton}" Content="{Binding [设备], Source={x:Static loc:Loc.Instance}}" Click="Nav_Click"/>
-                    <Button x:Name="Nav1" Style="{StaticResource TabButton}" Content="{Binding [画面], Source={x:Static loc:Loc.Instance}}" Click="Nav_Click"/>
-                    <Button x:Name="Nav2" Style="{StaticResource TabButton}" Content="{Binding [声音], Source={x:Static loc:Loc.Instance}}" Click="Nav_Click"/>
+                    <Button x:Name="Nav1" Style="{StaticResource TabButton}" Content="{Binding [投屏], Source={x:Static loc:Loc.Instance}}" Click="Nav_Click"/>
+                    <Button x:Name="Nav2" Style="{StaticResource TabButton}" Content="{Binding [设置], Source={x:Static loc:Loc.Instance}}" Click="Nav_Click"/>
                     <Button x:Name="Nav3" Style="{StaticResource TabButton}" Content="{Binding [更多], Source={x:Static loc:Loc.Instance}}" Click="Nav_Click"/>
                 </UniformGrid>
             </Border>
@@ -452,6 +452,70 @@
                 <ScrollViewer x:Name="PageDisplay" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
                     <StackPanel>
                         <TextBlock Text="{Binding [画面], Source={x:Static loc:Loc.Instance}}" FontSize="21" FontWeight="Bold" Foreground="{StaticResource TextBrush}" Margin="2,0,0,12"/>
+
+
+                        <TextBlock Text="{Binding [投屏], Source={x:Static loc:Loc.Instance}}" Style="{StaticResource SectionTitle}" Margin="2,6,0,8"/>
+
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="{Binding [投屏模式], Source={x:Static loc:Loc.Instance}}" Style="{StaticResource SectionTitle}"/>
+                                <UniformGrid Columns="2" Margin="0,2,0,0">
+                                    <Button x:Name="BtnModeMirror" Content="{Binding [镜像模式], Source={x:Static loc:Loc.Instance}}" Height="34" Margin="0,0,4,0" Style="{StaticResource GhostButton}" Click="BtnModeMirror_Click"/>
+                                    <Button x:Name="BtnModeLock" Content="{Binding [锁屏模式], Source={x:Static loc:Loc.Instance}}" Height="34" Margin="4,0,0,0" Style="{StaticResource GhostButton}" Click="BtnModeLock_Click"/>
+                                </UniformGrid>
+                                <StackPanel x:Name="PnlModeMirror" Margin="0,10,0,0">
+                                    <TextBlock Style="{StaticResource Hint}" TextWrapping="Wrap" Text="{Binding [投屏内容与手机屏幕完全一致。手动锁屏后投屏会显示锁屏界面或黑屏；手机屏幕内容与投屏一致，不适合藏起来看。], Source={x:Static loc:Loc.Instance}}"/>
+                                </StackPanel>
+                                <StackPanel x:Name="PnlModeLock" Visibility="Collapsed" Margin="0,10,0,0">
+                                    <TextBlock Style="{StaticResource Hint}" TextWrapping="Wrap" Text="{Binding [新建一块虚拟屏幕，手机会自动锁屏，投屏照常运行。], Source={x:Static loc:Loc.Instance}}"/>
+                                    <Grid Margin="0,10,0,0">
+                                        <TextBlock Text="{Binding [启动应用], Source={x:Static loc:Loc.Instance}}" Style="{StaticResource Label}"/>
+                                        <Button x:Name="BtnRefreshApps" Content="{Binding [刷新], Source={x:Static loc:Loc.Instance}}" Width="64" Height="28" Style="{StaticResource GhostButton}" HorizontalAlignment="Right" Click="BtnRefreshApps_Click"/>
+                                    </Grid>
+                                    <ComboBox x:Name="CmbApps" Margin="0,8,0,0" Height="38" MaxDropDownHeight="300"
+                                              Background="#1B1C20" BorderBrush="{StaticResource CardBorderBrush}" BorderThickness="1"
+                                              Foreground="{StaticResource TextBrush}" SelectionChanged="CmbApps_SelectionChanged"
+                                              AutomationProperties.Name="启动应用">
+                                        <ComboBox.ItemContainerStyle>
+                                            <Style TargetType="ComboBoxItem">
+                                                <Setter Property="Background" Value="#1B1C20"/>
+                                                <Setter Property="Padding" Value="6,4"/>
+                                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                                <Style.Triggers>
+                                                    <Trigger Property="IsHighlighted" Value="True"><Setter Property="Background" Value="#26272B"/></Trigger>
+                                                    <Trigger Property="IsSelected" Value="True"><Setter Property="Background" Value="#2F3A4A"/></Trigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </ComboBox.ItemContainerStyle>
+                                        <ComboBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <Grid Height="34">
+                                                    <Grid.ColumnDefinitions><ColumnDefinition Width="26"/><ColumnDefinition Width="30"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                    <Button Content="{Binding StarGlyph}" Tag="{Binding}" Width="24" Height="24" Background="Transparent" BorderThickness="0" Foreground="#FFD60A" FontSize="15" Cursor="Hand" Click="BtnStarApp_Click"/>
+                                                    <Border Grid.Column="1" Width="26" Height="26" CornerRadius="7" Background="{Binding AvatarBrush}">
+                                                        <Grid>
+                                                            <TextBlock Text="{Binding AvatarText}" Foreground="White" FontSize="12" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                            <Image Source="{Binding IconSource}" Width="26" Height="26" Stretch="UniformToFill"/>
+                                                        </Grid>
+                                                    </Border>
+                                                    <TextBlock Grid.Column="2" Text="{Binding DisplayName}" Margin="8,0,0,0" VerticalAlignment="Center" Foreground="{StaticResource TextBrush}" FontSize="12.5" TextTrimming="CharacterEllipsis"/>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ComboBox.ItemTemplate>
+                                    </ComboBox>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+
+
+                    </StackPanel>
+                </ScrollViewer>
+
+                <!-- ========== 声音 ========== -->
+                <ScrollViewer x:Name="PageSettings" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <TextBlock Text="{Binding [设置], Source={x:Static loc:Loc.Instance}}" FontSize="21" FontWeight="Bold" Foreground="{StaticResource TextBrush}" Margin="2,0,0,12"/>
                         <Border Style="{StaticResource Card}">
                             <StackPanel>
                                 <Grid>
@@ -465,7 +529,6 @@
                                 <TextBlock Style="{StaticResource Hint}" Margin="0,6,0,0" Text="{Binding [实时生效，只作用于投屏窗口。], Source={x:Static loc:Loc.Instance}}"/>
                             </StackPanel>
                         </Border>
-
                         <Border Style="{StaticResource Card}">
                             <StackPanel>
                                 <TextBlock Text="{Binding [老板键（隐藏 / 显示投屏窗口）], Source={x:Static loc:Loc.Instance}}" Style="{StaticResource SectionTitle}"/>
@@ -487,67 +550,6 @@
                                            Text="{Binding [点「录制」后按下你想要的组合键，例如 Alt+` 或 Ctrl+Shift+Q。], Source={x:Static loc:Loc.Instance}}"/>
                             </StackPanel>
                         </Border>
-
-                        <TextBlock Text="{Binding [投屏], Source={x:Static loc:Loc.Instance}}" Style="{StaticResource SectionTitle}" Margin="2,6,0,8"/>
-
-                        <Border Style="{StaticResource Card}">
-                            <StackPanel>
-                                <TextBlock Text="{Binding [投屏模式], Source={x:Static loc:Loc.Instance}}" Style="{StaticResource SectionTitle}"/>
-                                <UniformGrid Columns="2" Margin="0,2,0,0">
-                                    <Button x:Name="BtnModeMirror" Content="{Binding [镜像模式], Source={x:Static loc:Loc.Instance}}" Height="34" Margin="0,0,4,0" Style="{StaticResource GhostButton}" Click="BtnModeMirror_Click"/>
-                                    <Button x:Name="BtnModeLock" Content="{Binding [锁屏模式], Source={x:Static loc:Loc.Instance}}" Height="34" Margin="4,0,0,0" Style="{StaticResource GhostButton}" Click="BtnModeLock_Click"/>
-                                </UniformGrid>
-                                <StackPanel x:Name="PnlModeMirror" Margin="0,10,0,0">
-                                    <TextBlock Style="{StaticResource Hint}" TextWrapping="Wrap" Text="{Binding [投屏内容与手机屏幕完全一致。手动锁屏后投屏会显示锁屏界面或黑屏；手机屏幕内容与投屏一致，不适合藏起来看。], Source={x:Static loc:Loc.Instance}}"/>
-                                </StackPanel>
-                                <StackPanel x:Name="PnlModeLock" Visibility="Collapsed" Margin="0,10,0,0">
-                                    <TextBlock Style="{StaticResource Hint}" TextWrapping="Wrap" Text="{Binding [新建一块虚拟屏幕，手机会自动锁屏，投屏照常运行。], Source={x:Static loc:Loc.Instance}}"/>
-                                    <Grid Margin="0,10,0,0">
-                                        <TextBlock Text="{Binding [启动应用], Source={x:Static loc:Loc.Instance}}" Style="{StaticResource Label}"/>
-                                        <Button x:Name="BtnRefreshApps" Content="{Binding [刷新], Source={x:Static loc:Loc.Instance}}" Width="64" Height="28" Style="{StaticResource GhostButton}" HorizontalAlignment="Right" Click="BtnRefreshApps_Click"/>
-                                    </Grid>
-                                    <Border Background="#1B1C20" BorderBrush="{StaticResource CardBorderBrush}" BorderThickness="1" CornerRadius="8" Height="230" Margin="0,8,0,0">
-                                        <ListBox x:Name="LstApps" Background="Transparent" BorderThickness="0" ScrollViewer.VerticalScrollBarVisibility="Auto" Padding="4" SelectionChanged="LstApps_SelectionChanged">
-                                            <ListBox.ItemContainerStyle>
-                                                <Style TargetType="ListBoxItem">
-                                                    <Setter Property="Padding" Value="6,3"/>
-                                                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                                                    <Setter Property="Background" Value="Transparent"/>
-                                                    <Setter Property="Template">
-                                                        <Setter.Value>
-                                                            <ControlTemplate TargetType="ListBoxItem">
-                                                                <Border Background="{TemplateBinding Background}" CornerRadius="6" Padding="{TemplateBinding Padding}"><ContentPresenter/></Border>
-                                                                <ControlTemplate.Triggers>
-                                                                    <Trigger Property="IsMouseOver" Value="True"><Setter Property="Background" Value="#26272B"/></Trigger>
-                                                                    <Trigger Property="IsSelected" Value="True"><Setter Property="Background" Value="#2F3A4A"/></Trigger>
-                                                                </ControlTemplate.Triggers>
-                                                            </ControlTemplate>
-                                                        </Setter.Value>
-                                                    </Setter>
-                                                </Style>
-                                            </ListBox.ItemContainerStyle>
-                                            <ListBox.ItemTemplate>
-                                                <DataTemplate>
-                                                    <Grid Height="34">
-                                                        <Grid.ColumnDefinitions><ColumnDefinition Width="26"/><ColumnDefinition Width="30"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                                                        <Button Content="{Binding StarGlyph}" Tag="{Binding}" Width="24" Height="24" Background="Transparent" BorderThickness="0" Foreground="#FFD60A" FontSize="15" Cursor="Hand" Click="BtnStarApp_Click"/>
-                                                        <Border Grid.Column="1" Width="26" Height="26" CornerRadius="7" Background="{Binding AvatarBrush}">
-                                                            <Grid>
-                                                                <TextBlock Text="{Binding AvatarText}" Foreground="White" FontSize="12" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                                <Image Source="{Binding IconSource}" Width="26" Height="26" Stretch="UniformToFill"/>
-                                                            </Grid>
-                                                        </Border>
-                                                        <TextBlock Grid.Column="2" Text="{Binding DisplayName}" Margin="8,0,0,0" VerticalAlignment="Center" Foreground="{StaticResource TextBrush}" FontSize="12.5" TextTrimming="CharacterEllipsis"/>
-                                                    </Grid>
-                                                </DataTemplate>
-                                            </ListBox.ItemTemplate>
-                                        </ListBox>
-                                    </Border>
-                                    <TextBlock Style="{StaticResource Hint}" Margin="0,8,0,0" TextWrapping="Wrap" FontSize="11" Text="{Binding [使用说明：选一个 App，点开始投屏后会自动打开并锁屏；锁屏期间不能换 App，要换请先解锁手机；请保持 USB 连接。], Source={x:Static loc:Loc.Instance}}"/>
-                                </StackPanel>
-                            </StackPanel>
-                        </Border>
-
                         <Border Style="{StaticResource Card}">
                             <StackPanel>
                                 <Grid>
@@ -569,7 +571,6 @@
                                 </Grid>
                             </StackPanel>
                         </Border>
-
                         <Border Style="{StaticResource Card}">
                             <StackPanel>
                                 <Grid>
@@ -580,18 +581,6 @@
                                            Text="{Binding [使用 HID 键盘模式，几乎所有 App 都能收到按键。关闭则用默认 SDK 模式。], Source={x:Static loc:Loc.Instance}}"/>
                             </StackPanel>
                         </Border>
-                          <Border Style="{StaticResource Card}">
-                              <StackPanel>
-                                  <Grid>
-                                      <TextBlock Text="{Binding [禁用电脑输入法（解决打字无反应）], Source={x:Static loc:Loc.Instance}}" Style="{StaticResource Label}"/>
-                                      <CheckBox x:Name="ChkDisableIme" AutomationProperties.Name="禁用电脑输入法" Style="{StaticResource ToggleSwitch}" IsChecked="True"
-                                                HorizontalAlignment="Right" Checked="ChkDisableIme_Changed" Unchecked="ChkDisableIme_Changed"/>
-                                  </Grid>
-                                  <TextBlock Style="{StaticResource Hint}" Margin="0,8,0,0" TextWrapping="Wrap"
-                                             Text="{Binding [中文输入法会拦截字母键，导致电脑打字没反应。开启后投屏窗口绕过电脑输入法。], Source={x:Static loc:Loc.Instance}}"/>
-                              </StackPanel>
-                          </Border>
-
                         <Border Style="{StaticResource Card}">
                             <StackPanel>
                                 <Grid>
@@ -618,13 +607,17 @@
                                 </Border>
                             </StackPanel>
                         </Border>
-                    </StackPanel>
-                </ScrollViewer>
-
-                <!-- ========== 声音 ========== -->
-                <ScrollViewer x:Name="PageAudio" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
-                    <StackPanel>
-                        <TextBlock Text="{Binding [声音], Source={x:Static loc:Loc.Instance}}" FontSize="21" FontWeight="Bold" Foreground="{StaticResource TextBrush}" Margin="2,0,0,12"/>
+                          <Border Style="{StaticResource Card}">
+                              <StackPanel>
+                                  <Grid>
+                                      <TextBlock Text="{Binding [禁用电脑输入法（解决打字无反应）], Source={x:Static loc:Loc.Instance}}" Style="{StaticResource Label}"/>
+                                      <CheckBox x:Name="ChkDisableIme" AutomationProperties.Name="禁用电脑输入法" Style="{StaticResource ToggleSwitch}" IsChecked="True"
+                                                HorizontalAlignment="Right" Checked="ChkDisableIme_Changed" Unchecked="ChkDisableIme_Changed"/>
+                                  </Grid>
+                                  <TextBlock Style="{StaticResource Hint}" Margin="0,8,0,0" TextWrapping="Wrap"
+                                             Text="{Binding [中文输入法会拦截字母键，导致电脑打字没反应。开启后投屏窗口绕过电脑输入法。], Source={x:Static loc:Loc.Instance}}"/>
+                              </StackPanel>
+                          </Border>
                         <Border Style="{StaticResource Card}">
                             <StackPanel>
                                 <UniformGrid Columns="3" Height="38">

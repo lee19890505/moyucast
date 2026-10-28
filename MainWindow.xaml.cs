@@ -717,7 +717,24 @@ public partial class MainWindow : Window
 
     private void ShowWarning(string message)
     {
-        MessageBox.Show(this, message, "MoyuCast", MessageBoxButton.OK, MessageBoxImage.Warning);
+        if (PnlDialog == null) { MessageBox.Show(this, message, "MoyuCast", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
+
+        TxtDialogMessage.Text = message;
+        PnlDialog.Visibility = Visibility.Visible;
+        PnlDialog.Opacity = 0;
+        var fade = new System.Windows.Media.Animation.DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(120));
+        PnlDialog.BeginAnimation(UIElement.OpacityProperty, fade);
+        AppendLog("提示：" + message.Replace("\n", " "));
+    }
+
+    private void BtnDialogOk_Click(object sender, RoutedEventArgs e) => HideDialog();
+
+    private void HideDialog()
+    {
+        if (PnlDialog == null) return;
+        PnlDialog.Visibility = Visibility.Collapsed;
+        PnlDialog.BeginAnimation(UIElement.OpacityProperty, null);
+        PnlDialog.Opacity = 1;
     }
 
     private string GetSelectedSerial()
@@ -1280,6 +1297,11 @@ public partial class MainWindow : Window
 
     private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
     {
+        if (PnlDialog != null && PnlDialog.Visibility == Visibility.Visible)
+        {
+            if (e.Key == Key.Escape || e.Key == Key.Enter) { HideDialog(); e.Handled = true; }
+            return;
+        }
         if (!_capturingHotkey) return;
 
         if (e.Key == Key.Escape)

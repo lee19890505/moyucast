@@ -226,6 +226,8 @@ public class Loc : INotifyPropertyChanged
         ["关闭：需要先移入投屏窗口，再移出才隐藏（约 0.5 秒）。"] = "Off: the cursor must enter the mirror window first, then leave (about 0.5 s).",
         // ---------- 校验弹窗 ----------
         ["请选择应用"] = "Select an app",
+        ["提示"] = "Notice",
+        ["确定"] = "OK",
         ["请填写无线投屏的 IP 地址"] = "Enter the wireless mirroring IP address",
         ["无线投屏不可用"] = "Wireless mirroring unavailable",
         ["无线投屏不可用：无法连接到 {0}\n\n请检查：\n• 手机与电脑是否在同一 Wi-Fi\n• 手机是否开启「无线调试」\n• 是否需要重新配对\n\n设备状态：{1}"] = "Wireless mirroring unavailable: cannot connect to {0}\n\nCheck:\n- phone and PC are on the same Wi-Fi\n- wireless debugging is enabled on the phone\n- pairing may be required again\n\nDevice state: {1}",

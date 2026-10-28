@@ -25,6 +25,7 @@ public partial class MainWindow : Window
     private NativeWin32.RECT _lastHoverRect;
     private bool _hasLastHoverRect;
     private DateTime _autoHideSuppressUntil = DateTime.MinValue;
+    private DateTime _lastHoverRectChangeAt = DateTime.MinValue;
     private DateTime _outsideSince = DateTime.MinValue;
 
     private IntPtr _scrcpyHwnd = IntPtr.Zero;
@@ -606,6 +607,13 @@ public partial class MainWindow : Window
         _settings.Save();
         _activeSerial = serial;
 
+        // 新开投屏：重置鼠标判定状态，给窗口落位时间（虚拟屏创建更慢，给 5 秒）
+        _hasLastHoverRect = false;
+        _lastHoverRectChangeAt = DateTime.MinValue;
+        _autoHideArmed = false;
+        _outsideSince = DateTime.MinValue;
+        _autoHideSuppressUntil = DateTime.UtcNow.AddMilliseconds(_settings.DisplayMode == "lock" ? 5000 : 3000);
+
         BtnStart.IsEnabled = false;
         ShowLoading(Loc.T("正在连接设备…"), Loc.T("推送服务端并建立画面通道"));
 
@@ -1080,8 +1088,6 @@ public partial class MainWindow : Window
     private void HoverTimer_Tick(object sender, EventArgs e)
     {
         if (!_settings.AutoHideOnLeave) { _autoHideArmed = false; return; }
-        // 锁屏模式下手机本来就锁着、鼠标通常不在投屏窗口上，自动隐藏会让窗口刚出来就消失
-        if (_settings.DisplayMode == "lock" && _runner.IsRunning) { _autoHideArmed = false; return; }
 
         EnsureBossStateConsistent();
         if (_bossHidden) return;
@@ -1103,12 +1109,17 @@ public partial class MainWindow : Window
              Math.Abs(r.Right - _lastHoverRect.Right) > 2 || Math.Abs(r.Bottom - _lastHoverRect.Bottom) > 2))
         {
             _lastHoverRect = r;
+            _lastHoverRectChangeAt = DateTime.UtcNow;
             _autoHideArmed = false;
             _outsideSince = DateTime.MinValue;
             return;
         }
+        if (!_hasLastHoverRect) _lastHoverRectChangeAt = DateTime.UtcNow;
         _lastHoverRect = r;
         _hasLastHoverRect = true;
+
+        // 窗口必须稳定 800ms 以上才允许判定，避免刚启动/刚移动时误判
+        if ((DateTime.UtcNow - _lastHoverRectChangeAt).TotalMilliseconds < 800) return;
 
         // 拖动 / 缩放投屏窗口期间，鼠标会短暂跑到窗口外，不能判定为"离开"
         if (NativeWin32.IsLeftButtonDown() || NativeWin32.IsInMoveSize(hwnd))

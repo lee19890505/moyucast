@@ -576,7 +576,7 @@ public partial class MainWindow : Window
         if (ChkWireless.IsChecked == true)
         {
             var host = TxtIp.Text.Trim();
-            if (host.Length == 0) { LblStatus.Text = Loc.T("请填写无线 IP"); return; }
+            if (host.Length == 0) { ShowWarning(Loc.T("请填写无线投屏的 IP 地址")); return; }
             serial = host.Contains(':') ? host : $"{host}:{TxtPort.Text.Trim()}";
         }
         else if (CmbDevice.SelectedItem is DeviceItem d)
@@ -584,7 +584,22 @@ public partial class MainWindow : Window
             serial = d.Serial;
         }
 
-        if (string.IsNullOrEmpty(serial)) { LblStatus.Text = Loc.T("请先选择设备"); return; }
+        if (string.IsNullOrEmpty(serial)) { ShowWarning(Loc.T("请先选择设备")); return; }
+
+        // 无线投屏可用性校验：能连上、能执行命令才算可用
+        if (ChkWireless.IsChecked == true)
+        {
+            var state = _adb.Run($"-s {serial} get-state", 8000).Trim();
+            var probe = _adb.Run($"-s {serial} shell echo moyucast-ok", 8000);
+            if (state != "device" || !probe.Contains("moyucast-ok"))
+            {
+                var shown = string.IsNullOrWhiteSpace(state) ? "unknown" : state;
+                ShowWarning(Loc.F("无线投屏不可用：无法连接到 {0}\n\n请检查：\n• 手机与电脑是否在同一 Wi-Fi\n• 手机是否开启「无线调试」\n• 是否需要重新配对\n\n设备状态：{1}", serial, shown));
+                AppendLog("无线投屏不可用: " + serial + " state=" + shown);
+                LblStatus.Text = Loc.T("无线投屏不可用");
+                return;
+            }
+        }
 
         if (_settings.DisplayMode == "lock")
         {
@@ -596,6 +611,7 @@ public partial class MainWindow : Window
             var trust = _adb.Run($"-s {serial} shell dumpsys trust", 10000);
             if (trust.Contains("deviceLocked=1"))
             {
+                ShowWarning(Loc.T("手机当前处于锁屏状态。\n锁屏模式下需要先解锁手机，才能启动 App 并建立虚拟屏。\n\n请解锁后重试。"));
                 LblStatus.Text = Loc.T("手机当前已锁屏，请先解锁再开始投屏");
                 AppendLog(Loc.T("锁屏模式下需要先解锁手机，才能启动 App"));
                 return;
@@ -698,6 +714,11 @@ public partial class MainWindow : Window
     private List<AppItem> _appList = new();
     private readonly ObservableCollection<AppItem> _appItems = new();
     private bool _appsLoading;
+
+    private void ShowWarning(string message)
+    {
+        MessageBox.Show(this, message, "MoyuCast", MessageBoxButton.OK, MessageBoxImage.Warning);
+    }
 
     private string GetSelectedSerial()
     {

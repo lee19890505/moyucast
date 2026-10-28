@@ -224,6 +224,13 @@ public class Loc : INotifyPropertyChanged
         ["触发方式"] = "How it triggers",
         ["打开：无需先移入窗口，不在窗口上持续 0.8 秒就隐藏。"] = "On: no need to enter first; hides after 0.8 s outside the window.",
         ["关闭：需要先移入投屏窗口，再移出才隐藏（约 0.5 秒）。"] = "Off: the cursor must enter the mirror window first, then leave (about 0.5 s).",
+        // ---------- 校验弹窗 ----------
+        ["请选择应用"] = "Select an app",
+        ["请填写无线投屏的 IP 地址"] = "Enter the wireless mirroring IP address",
+        ["无线投屏不可用"] = "Wireless mirroring unavailable",
+        ["无线投屏不可用：无法连接到 {0}\n\n请检查：\n• 手机与电脑是否在同一 Wi-Fi\n• 手机是否开启「无线调试」\n• 是否需要重新配对\n\n设备状态：{1}"] = "Wireless mirroring unavailable: cannot connect to {0}\n\nCheck:\n- phone and PC are on the same Wi-Fi\n- wireless debugging is enabled on the phone\n- pairing may be required again\n\nDevice state: {1}",
+        ["手机当前处于锁屏状态。\n锁屏模式下需要先解锁手机，才能启动 App 并建立虚拟屏。\n\n请解锁后重试。"] = "The phone is locked.\nLock-screen mode needs the phone unlocked to launch the app and create a virtual display.\n\nPlease unlock and try again.",
+
         // ---------- 投屏模式 / 锁屏模式 ----------
         ["投屏模式"] = "Display mode",
         ["镜像模式"] = "Mirror",

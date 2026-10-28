@@ -226,7 +226,7 @@ public class Loc : INotifyPropertyChanged
         ["关闭：需要先移入投屏窗口，再移出才隐藏（约 0.5 秒）。"] = "Off: the cursor must enter the mirror window first, then leave (about 0.5 s).",
         // ---------- 校验弹窗 ----------
         ["请选择应用"] = "Select an app",
-        ["提示"] = "Notice",
+        ["提示"] = "Warning",
         ["确定"] = "OK",
         ["请填写无线投屏的 IP 地址"] = "Enter the wireless mirroring IP address",
         ["无线投屏不可用"] = "Wireless mirroring unavailable",
@@ -309,5 +309,6 @@ public class Loc : INotifyPropertyChanged
         => CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.Equals("zh", StringComparison.OrdinalIgnoreCase)
             ? "zh-CN" : "en-US";
 }
+
 
 

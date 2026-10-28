@@ -47,8 +47,8 @@
 
 <p align="center">
   <img src="docs/screenshots/device.png" width="23%" alt="设备页" />
-  <img src="docs/screenshots/display.png" width="23%" alt="画面页" />
-  <img src="docs/screenshots/audio.png" width="23%" alt="声音页" />
+  <img src="docs/screenshots/mirroring.png" width="23%" alt="投屏页" />
+  <img src="docs/screenshots/settings.png" width="23%" alt="设置页" />
   <img src="docs/screenshots/more.png" width="23%" alt="更多页" />
 </p>
 <p align="center">
@@ -87,7 +87,9 @@ MoyuCast 把这些全部做成了按钮和开关。
 | **USB 直连** | 插线即用，自动识别 |
 | **无线一键投屏** | 自动读取手机 IP、切 TCP、连接，一步到位 |
 | **首次配对** | 支持 Android 11+ 无线调试的 6 位配对码 |
-| **息屏投屏** | 手机背光压到 0 且保持唤醒，电脑照常可见可操作 |
+| **两种投屏模式** | 镜像模式：画面即手机屏幕；锁屏模式：新建虚拟屏，手机可锁屏 |
+| **锁屏投屏** | 选一个 App，点开始后自动打开并锁屏，手机黑屏也能继续看和操作 |
+| **App 选择器** | 自动读取手机第三方 App，支持星标置顶、原生图标、刷新 |
 | **锁定宽高比** | 拖窗口自动保持比例，拒绝黑边 |
 | **窗口记忆** | 关闭后记住投屏窗口位置/大小/透明度，下次原样恢复 |
 
@@ -110,7 +112,8 @@ MoyuCast 把这些全部做成了按钮和开关。
 
 - macOS 风格深色主题：红黄绿信号灯、圆角卡片、iOS 风格开关
 - 竖屏比例 430 × 760，可自由拉伸
-- 四个页签：设备 / 画面 / 声音 / 更多（更新、日志、关于都收在这里，日志点击才展开）
+- 四个页签：设备 / 投屏 / 设置 / 更多（更新、日志、关于都收在这里，日志点击才展开）
+- 中英双语：默认跟随系统，应用内一键切换
 - 启动投屏有加载动画和耗时记录
 
 ### 🧰 其他
@@ -233,8 +236,8 @@ Press it again and everything comes back exactly as it was: same size, same posi
 
 <p align="center">
   <img src="docs/screenshots/en/device.png" width="23%" alt="Device tab" />
-  <img src="docs/screenshots/en/display.png" width="23%" alt="Display tab" />
-  <img src="docs/screenshots/en/audio.png" width="23%" alt="Audio tab" />
+  <img src="docs/screenshots/en/mirroring.png" width="23%" alt="Mirroring tab" />
+  <img src="docs/screenshots/en/settings.png" width="23%" alt="Settings tab" />
   <img src="docs/screenshots/en/more.png" width="23%" alt="More tab" />
 </p>
 <p align="center">
@@ -273,7 +276,9 @@ MoyuCast turns all of that into buttons and switches.
 | **USB** | Plug and play, auto-detected |
 | **One-click wireless** | Reads the phone''s IP, switches to TCP, connects |
 | **First-time pairing** | Supports Android 11+ wireless debugging codes |
-| **Screen-off mirroring** | Drops panel brightness to 0 while keeping the device awake |
+| **Two mirroring modes** | Mirror: shows the phone screen; Lock screen: creates a virtual display so the phone can be locked |
+| **Lock-screen mirroring** | Pick an app; it launches and the phone locks automatically — the mirror keeps working |
+| **App picker** | Lists third-party apps with starred-first sorting, native icons and refresh |
 | **Aspect-ratio lock** | Resize freely, never see black bars |
 | **Window memory** | Remembers mirror window geometry and opacity across restarts |
 
@@ -296,7 +301,8 @@ MoyuCast turns all of that into buttons and switches.
 
 - macOS-inspired dark theme with traffic lights and iOS-style switches
 - Portrait 430 × 760 window, fully resizable
-- Five tabs: Device / Display / Audio / Appearance / Logs
+- Four tabs: Device / Mirroring / Settings / More
+- Chinese / English UI with instant in-app switching
 - Loading animation with timing on startup
 
 ## Quick start
@@ -386,6 +392,8 @@ This project is only a GUI wrapper around scrcpy. It does not modify or crack an
 Powered by [scrcpy](https://github.com/Genymobile/scrcpy) · [FFmpeg](https://ffmpeg.org/) · [SDL2](https://www.libsdl.org/)
 
 </div>
+
+
 
 
 

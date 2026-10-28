@@ -692,7 +692,7 @@
                                     </Grid.ColumnDefinitions>
                                     <TextBlock x:Name="LblVersion" Text="{Binding [当前版本], Source={x:Static loc:Loc.Instance}}" Style="{StaticResource Label}"/>
                                     <Button Grid.Column="1" x:Name="BtnCheckUpdate" AutomationProperties.Name="检查更新"
-                                            Content="{Binding [检查更新], Source={x:Static loc:Loc.Instance}}" Width="84" Height="32"
+                                            Content="{Binding [检查更新], Source={x:Static loc:Loc.Instance}}" MinWidth="84" Height="32" Padding="12,0"
                                             Style="{StaticResource GhostButton}" Click="BtnCheckUpdate_Click"/>
                                 </Grid>
                                 <TextBlock x:Name="LblUpdate" Style="{StaticResource Hint}" Margin="0,8,0,0" TextWrapping="Wrap"
@@ -792,6 +792,8 @@
         </Grid>
     </Border>
 </Window>
+
+
 
 
 

@@ -1,13 +1,55 @@
 ﻿# 更新日志
-- **界面结构调整**：导航改为 设备 / 投屏 / 设置 / 更多；画面与声音合并进「设置」；App 选择改为下拉框
-- **启动前校验弹窗**：锁屏模式下手机未解锁、无线投屏不可用时弹出**应用内深色提示层**（替代系统 MessageBox）
-- **锁屏模式（虚拟屏投屏）**：新建虚拟显示，手机可锁屏/熄屏，投屏照常可看可操作
-  - 画面页顶部新增「投屏模式」：镜像模式 / 锁屏模式
-  - 锁屏模式下自动读取第三方 App 列表，支持星标置顶、刷新、原生图标（命中约 40%，其余字母头像）
-  - 选择 App 后开始投屏 → 自动打开该 App → 自动锁屏
-  - 修复 stay_on_while_plugged_in 不还原的问题（记录原值并恢复）
 
 本项目遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 风格，版本号遵循语义化版本。
+
+## [v1.3.0] - 2026-10-28
+
+### 新增
+
+- **锁屏模式（虚拟屏投屏）**：新建一块虚拟显示，手机可锁屏/熄屏，投屏窗口照常可看、可点、可打字
+  - 投屏页顶部「投屏模式」：镜像模式 / 锁屏模式
+  - 锁屏模式下自动读取手机第三方 App（当前设备 59 个），支持**星标置顶**、刷新、原生图标（约 40% 命中，其余用彩色字母头像兜底）
+  - App 选择改为**深色下拉框**，默认显示上次选择，选中后自动收起
+  - 选好 App 点开始投屏 → 自动打开该 App → 自动锁屏（`input keyevent 26`）
+- **启动前校验弹窗**：锁屏模式下手机未解锁、无线投屏不可用时，弹出**应用内深色提示层**（替代系统 MessageBox，支持 Esc / Enter 关闭）
+- **保持唤醒原值恢复**：记录并还原 `stay_on_while_plugged_in`，避免污染用户设置；崩溃后下次启动自动恢复
+
+### 变更
+
+- **导航改为 4 个页签：设备 / 投屏 / 设置 / 更多**
+  - 新增「投屏」页：投屏模式 + 启动应用
+  - 「画面」与「声音」合并为「设置」页
+  - 「更多」页不变：语言 / 检查更新 / 日志 / 关于
+- 删除旧的「息屏投屏」（亮度归零）功能，由锁屏模式取代
+
+### 修复
+
+- 锁屏模式启动时窗口被误判为「鼠标离开」而自动隐藏
+- 锁屏模式下自动隐藏失效（改为窗口稳定 800ms 后判定 + 启动抑制期）
+- 无线投屏不可用时静默失败（改为弹窗说明原因）
+- 检查更新按钮在英文下文字被截断
+
+### English summary
+
+**Added**
+- Lock-screen mode: creates a virtual display so the phone can be locked while mirroring keeps running
+  - Display mode switch (Mirror / Lock screen) on the Mirroring tab
+  - Lists third-party apps with starred-first sorting, refresh, and native icons (~40% hit rate, letter avatars otherwise)
+  - Dark dropdown app picker that remembers the last choice
+  - Starts the selected app and locks the phone automatically
+- Pre-start validation with an in-app dark dialog (phone locked / wireless unavailable)
+- `stay_on_while_plugged_in` is saved and restored
+
+**Changed**
+- Navigation is now 4 tabs: Device / Mirroring / Settings / More
+- Display and Audio settings merged into Settings
+- Removed the legacy "dim the panel" feature in favour of lock-screen mode
+
+**Fixed**
+- Auto-hide misfired right after starting lock-screen mode
+- Auto-hide stopped working in lock-screen mode
+- Wireless failures were silent (now explained in a dialog)
+- "Check for updates" was truncated in English
 
 ## [v1.2.0] - 2026-10-26
 
@@ -22,8 +64,16 @@
 - 老板键隐藏后从托盘唤回主窗口时 `_bossHidden` 未复位，导致自动隐藏 / 比例锁定永久失效
 - 自动隐藏的窗口稳定性判定改为 2px 容差，避免 1px 抖动导致永不触发
 
-
 ## [v1.1.1] - 2026-10-22
+
+### 修复
+
+- **鼠标移开自动隐藏误触发**：拖动投屏窗口时窗口跟随有延迟，会被误判为鼠标离开
+  - 按住左键、或窗口处于移动/缩放循环时，不做离开判定
+- **版本号不随 tag 更新**：`<Version>` 写死在 csproj，导致 v1.1.0 的包内部仍显示 v1.0.3
+  - CI 现在从 git tag 自动注入 `-p:Version`
+
+## [v1.1.0] - 2026-10-22
 
 ### 变更
 
@@ -37,13 +87,8 @@
 ### 修复
 
 - **电脑打字无反应**：中文输入法会拦截字母键，按键到不了手机（Esc / 方向键不受影响）
-  - 新增「画面 → 禁用电脑输入法」开关（默认开启），给投屏窗口解绑 IME
-- **鼠标移开自动隐藏误触发**：拖动投屏窗口时窗口跟随有延迟，会被误判为鼠标离开
-  - 按住左键、或窗口处于移动/缩放循环时，不做离开判定
-- **版本号不随 tag 更新**：`<Version>` 写死在 csproj，导致 v1.1.0 的包内部仍显示 v1.0.3
-  - CI 现在从 git tag 自动注入 `-p:Version`
+  - 新增「设置 → 禁用电脑输入法」开关（默认开启），给投屏窗口解绑 IME
 
----
 ## [v1.0.3] - 2026-10-21
 
 ### 新增
@@ -53,13 +98,13 @@
 - **单实例锁**：重复启动只会唤醒已有窗口，不会开出第二个进程
 - **应用内检查更新**：读取 GitHub Releases，国内网络自动走镜像
 - **像素风图标**：16 ~ 256 多尺寸 ICO，应用、窗口、托盘统一使用
-- **自动化冒烟测试**：`tests/MoyuCast/smoke-test.ps1`，37 项断言覆盖启动、几何、单实例、投屏、透明度、老板键、托盘、语言
+- **自动化冒烟测试**：`tests/MoyuCast/smoke-test.ps1`
 
 ### 变更
 
-- 导航由 5 个页签精简为 4 个：设备 / 画面 / 声音 / 更多
+- 导航由 5 个页签精简为 4 个
 - 「投屏窗口透明度」「老板键」移到「画面」页顶部
-- 「外观」页改名「更多」，改为：检查更新 + 运行日志（点击展开）+ 关于
+- 「外观」页改名「更多」
 - 删除独立的「日志」页签
 
 ### 修复
@@ -71,34 +116,7 @@
 - **「scrcpy 目录」永远显示 `…`**：启动时未刷新
 - **恢复亮度时 epd / 副屏模式被硬编码为 1**：改为按原值恢复
 - **老板键恢复会把小窗口强行撑大**
-- **刚开投屏就自动进入老板键**：窗口落位期间不再参与「鼠标离开」判定（两处修复）
-
-### English
-
-**Added**
-- Bilingual UI (Chinese / English) with instant in-app switching, no restart
-- System tray icon with minimize-to-tray; tray menu can start/stop mirroring
-- Single-instance lock — launching again just brings the running window forward
-- In-app update check against GitHub Releases, with mirror fallback for mainland China
-- Pixel-art app & tray icon (16–256 px ICO)
-- Automated smoke tests (37 assertions)
-
-**Changed**
-- Navigation reduced from 5 tabs to 4: Device / Display / Audio / More
-- Opacity and boss key moved to the top of the Display page
-- "Appearance" renamed "More": update check + collapsible runtime log + about
-- Removed the standalone Log tab
-
-**Fixed**
-- adb calls could hang forever; timeouts now actually work
-- Saved window geometry was never restored
-- Screen-dim state could survive a crash and leave the phone at 0 brightness
-- Switching audio mode froze the UI for ~700 ms
-- The scrcpy folder was never displayed
-- epd / secondary brightness modes were hard-coded on restore
-- Boss-key restore enlarged small windows
-- Auto-hide fired immediately after starting mirroring
-- 无边框窗口按钮补充无障碍名称
+- **刚开投屏就自动进入老板键**：窗口落位期间不再参与「鼠标离开」判定
 
 ## [v1.0.2] - 2026-10-20
 
@@ -119,6 +137,4 @@
 
 ### 新增
 
-- 首个版本：设备列表、无线投屏、音频三态、息屏、比例锁定、窗口置顶、透明度、老板键、日志
-
-
+- 首个版本：设备列表、无线投屏、音频三态、比例锁定、窗口置顶、透明度、老板键、日志

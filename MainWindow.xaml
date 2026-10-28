@@ -451,7 +451,7 @@
                 <!-- ========== 画面 ========== -->
                 <ScrollViewer x:Name="PageDisplay" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
                     <StackPanel>
-                        <TextBlock Text="{Binding [画面], Source={x:Static loc:Loc.Instance}}" FontSize="21" FontWeight="Bold" Foreground="{StaticResource TextBrush}" Margin="2,0,0,12"/>
+                        <TextBlock Text="{Binding [投屏], Source={x:Static loc:Loc.Instance}}" FontSize="21" FontWeight="Bold" Foreground="{StaticResource TextBrush}" Margin="2,0,0,12"/>
 
 
                         <TextBlock Text="{Binding [投屏], Source={x:Static loc:Loc.Instance}}" Style="{StaticResource SectionTitle}" Margin="2,6,0,8"/>
@@ -472,37 +472,67 @@
                                         <TextBlock Text="{Binding [启动应用], Source={x:Static loc:Loc.Instance}}" Style="{StaticResource Label}"/>
                                         <Button x:Name="BtnRefreshApps" Content="{Binding [刷新], Source={x:Static loc:Loc.Instance}}" Width="64" Height="28" Style="{StaticResource GhostButton}" HorizontalAlignment="Right" Click="BtnRefreshApps_Click"/>
                                     </Grid>
-                                    <ComboBox x:Name="CmbApps" Margin="0,8,0,0" Height="38" MaxDropDownHeight="300"
-                                              Background="#1B1C20" BorderBrush="{StaticResource CardBorderBrush}" BorderThickness="1"
-                                              Foreground="{StaticResource TextBrush}" SelectionChanged="CmbApps_SelectionChanged"
-                                              AutomationProperties.Name="启动应用">
-                                        <ComboBox.ItemContainerStyle>
-                                            <Style TargetType="ComboBoxItem">
-                                                <Setter Property="Background" Value="#1B1C20"/>
-                                                <Setter Property="Padding" Value="6,4"/>
-                                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                                                <Style.Triggers>
-                                                    <Trigger Property="IsHighlighted" Value="True"><Setter Property="Background" Value="#26272B"/></Trigger>
-                                                    <Trigger Property="IsSelected" Value="True"><Setter Property="Background" Value="#2F3A4A"/></Trigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </ComboBox.ItemContainerStyle>
-                                        <ComboBox.ItemTemplate>
-                                            <DataTemplate>
-                                                <Grid Height="34">
-                                                    <Grid.ColumnDefinitions><ColumnDefinition Width="26"/><ColumnDefinition Width="30"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                                                    <Button Content="{Binding StarGlyph}" Tag="{Binding}" Width="24" Height="24" Background="Transparent" BorderThickness="0" Foreground="#FFD60A" FontSize="15" Cursor="Hand" Click="BtnStarApp_Click"/>
-                                                    <Border Grid.Column="1" Width="26" Height="26" CornerRadius="7" Background="{Binding AvatarBrush}">
-                                                        <Grid>
-                                                            <TextBlock Text="{Binding AvatarText}" Foreground="White" FontSize="12" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                            <Image Source="{Binding IconSource}" Width="26" Height="26" Stretch="UniformToFill"/>
-                                                        </Grid>
-                                                    </Border>
-                                                    <TextBlock Grid.Column="2" Text="{Binding DisplayName}" Margin="8,0,0,0" VerticalAlignment="Center" Foreground="{StaticResource TextBrush}" FontSize="12.5" TextTrimming="CharacterEllipsis"/>
+                                    <Button x:Name="BtnAppPicker" Height="38" Margin="0,8,0,0" Cursor="Hand" Click="BtnAppPicker_Click"
+                                            Background="#1B1C20" BorderBrush="{StaticResource CardBorderBrush}" BorderThickness="1"
+                                            Foreground="{StaticResource TextBrush}">
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8" Padding="8,0">
+                                                    <ContentPresenter VerticalAlignment="Center"/>
+                                                </Border>
+                                            </ControlTemplate>
+                                        </Button.Template>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                            <Border x:Name="PickerIcon" Width="24" Height="24" CornerRadius="6" Background="#3A3B40" VerticalAlignment="Center">
+                                                <Grid>
+                                                    <TextBlock x:Name="TxtPickerAvatar" Text="?" Foreground="White" FontSize="11" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    <Image x:Name="ImgPickerIcon" Width="24" Height="24" Stretch="UniformToFill"/>
                                                 </Grid>
-                                            </DataTemplate>
-                                        </ComboBox.ItemTemplate>
-                                    </ComboBox>
+                                            </Border>
+                                            <TextBlock x:Name="TxtPickerName" Grid.Column="1" Text="请选择应用" Margin="8,0,0,0" VerticalAlignment="Center" FontSize="12.5" TextTrimming="CharacterEllipsis" Foreground="{StaticResource TextBrush}"/>
+                                            <Path Grid.Column="2" Data="M 0 0 L 4 4 L 8 0" Stroke="#9A9AA0" StrokeThickness="1.6" VerticalAlignment="Center" Margin="8,2,2,0"/>
+                                        </Grid>
+                                    </Button>
+                                    <Popup x:Name="PupApps" PlacementTarget="{Binding ElementName=BtnAppPicker}" Placement="Bottom" StaysOpen="False" AllowsTransparency="True" PopupAnimation="Fade">
+                                        <Border Background="#1B1C20" BorderBrush="{StaticResource CardBorderBrush}" BorderThickness="1" CornerRadius="8" Margin="0,4,0,0" MaxHeight="300" Width="{Binding ActualWidth, ElementName=BtnAppPicker}">
+                                            <ListBox x:Name="LstApps" Background="Transparent" BorderThickness="0" ScrollViewer.VerticalScrollBarVisibility="Auto" Padding="4" SelectionChanged="LstApps_SelectionChanged">
+                                                <ListBox.ItemContainerStyle>
+                                                    <Style TargetType="ListBoxItem">
+                                                        <Setter Property="Padding" Value="6,3"/>
+                                                        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                                        <Setter Property="Background" Value="Transparent"/>
+                                                        <Setter Property="Template">
+                                                            <Setter.Value>
+                                                                <ControlTemplate TargetType="ListBoxItem">
+                                                                    <Border Background="{TemplateBinding Background}" CornerRadius="6" Padding="{TemplateBinding Padding}"><ContentPresenter/></Border>
+                                                                    <ControlTemplate.Triggers>
+                                                                        <Trigger Property="IsMouseOver" Value="True"><Setter Property="Background" Value="#26272B"/></Trigger>
+                                                                        <Trigger Property="IsSelected" Value="True"><Setter Property="Background" Value="#2F3A4A"/></Trigger>
+                                                                    </ControlTemplate.Triggers>
+                                                                </ControlTemplate>
+                                                            </Setter.Value>
+                                                        </Setter>
+                                                    </Style>
+                                                </ListBox.ItemContainerStyle>
+                                                <ListBox.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Grid Height="34">
+                                                            <Grid.ColumnDefinitions><ColumnDefinition Width="26"/><ColumnDefinition Width="30"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                            <Button Content="{Binding StarGlyph}" Tag="{Binding}" Width="24" Height="24" Background="Transparent" BorderThickness="0" Foreground="#FFD60A" FontSize="15" Cursor="Hand" Click="BtnStarApp_Click"/>
+                                                            <Border Grid.Column="1" Width="26" Height="26" CornerRadius="7" Background="{Binding AvatarBrush}">
+                                                                <Grid>
+                                                                    <TextBlock Text="{Binding AvatarText}" Foreground="White" FontSize="12" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                    <Image Source="{Binding IconSource}" Width="26" Height="26" Stretch="UniformToFill"/>
+                                                                </Grid>
+                                                            </Border>
+                                                            <TextBlock Grid.Column="2" Text="{Binding DisplayName}" Margin="8,0,0,0" VerticalAlignment="Center" Foreground="#F2F2F7" FontSize="12.5" TextTrimming="CharacterEllipsis"/>
+                                                        </Grid>
+                                                    </DataTemplate>
+                                                </ListBox.ItemTemplate>
+                                            </ListBox>
+                                        </Border>
+                                    </Popup>
                                 </StackPanel>
                             </StackPanel>
                         </Border>

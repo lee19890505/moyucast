@@ -56,7 +56,7 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         InitTray();
-        CmbApps.ItemsSource = _appItems;
+        LstApps.ItemsSource = _appItems;
 
         _settings = AppSettings.Load();
         _settings.ScrcpyDir = ResolveScrcpyDir(_settings.ScrcpyDir);
@@ -791,9 +791,10 @@ public partial class MainWindow : Window
             foreach (var it in _appList) _appItems.Add(it);
 
             if (!string.IsNullOrEmpty(_settings.LastLockApp))
-                CmbApps.SelectedItem = _appList.FirstOrDefault(x => x.Package == _settings.LastLockApp);
+                LstApps.SelectedItem = _appList.FirstOrDefault(x => x.Package == _settings.LastLockApp);
 
             AppendLog(Loc.F("已加载 {0} 个可启动应用", _appList.Count));
+            UpdateAppPickerButton();
             _ = LoadAppIconsAsync(serial);
         }
         catch (Exception ex)
@@ -819,6 +820,7 @@ public partial class MainWindow : Window
             {
                 var path = Path.Combine(AppListService.IconCacheDir, item.Package + ".png");
                 if (File.Exists(path)) item.IconPath = path;
+            UpdateAppPickerButton();
             }
         }
         catch { }
@@ -834,21 +836,48 @@ public partial class MainWindow : Window
         _settings.StarredApps = set.ToList();
         _settings.Save();
 
-        var selected = (CmbApps.SelectedItem as AppItem)?.Package;
+        var selected = (LstApps.SelectedItem as AppItem)?.Package;
         _appList = AppListService.Sort(_appList, _settings);
             _appItems.Clear();
             foreach (var it in _appList) _appItems.Add(it);
         if (!string.IsNullOrEmpty(selected))
-            CmbApps.SelectedItem = _appList.FirstOrDefault(x => x.Package == selected);
+            LstApps.SelectedItem = _appList.FirstOrDefault(x => x.Package == selected);
     }
 
-    private void CmbApps_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private void LstApps_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (CmbApps.SelectedItem is AppItem item)
+        if (LstApps.SelectedItem is AppItem item)
         {
             _settings.LastLockApp = item.Package;
             _settings.Save();
         }
+        if (PupApps != null) PupApps.IsOpen = false;
+        UpdateAppPickerButton();
+    }
+
+    private void BtnAppPicker_Click(object sender, RoutedEventArgs e)
+    {
+        if (PupApps == null) return;
+        PupApps.IsOpen = !PupApps.IsOpen;
+    }
+
+    /// <summary>刷新下拉按钮上显示的「当前选择」</summary>
+    private void UpdateAppPickerButton()
+    {
+        if (TxtPickerName == null) return;
+        var item = LstApps?.SelectedItem as AppItem;
+        if (item == null)
+        {
+            TxtPickerName.Text = Loc.T("请选择应用");
+            TxtPickerAvatar.Text = "?";
+            PickerIcon.Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x3A, 0x3B, 0x40));
+            ImgPickerIcon.Source = null;
+            return;
+        }
+        TxtPickerName.Text = item.DisplayName;
+        TxtPickerAvatar.Text = item.AvatarText;
+        PickerIcon.Background = item.AvatarBrush;
+        ImgPickerIcon.Source = item.IconSource;
     }
 
     // ---------------- 息屏（亮度归零 + 保持唤醒）----------------
@@ -1817,6 +1846,7 @@ public partial class MainWindow : Window
         TxtLog.ScrollToEnd();
     }
 }
+
 
 
 

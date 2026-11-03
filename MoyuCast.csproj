@@ -22,6 +22,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- tools 下只放开发脚本，避免临时 .cs 被 SDK 默认 glob 编译进去 -->
+    <Compile Remove="tools\**" />
     <Resource Include="Assets\MoyuCast.ico" />
     <!-- WinForms 只用于托盘图标，去掉它的隐式 using，避免和 WPF 类型重名 -->
     <Using Remove="System.Windows.Forms" />

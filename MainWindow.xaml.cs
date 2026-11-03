@@ -49,9 +49,12 @@ public partial class MainWindow : Window
     private class DeviceItem
     {
         public string Serial { get; set; }
+        public string State { get; set; } = "";
         public string Display { get; set; }
         public override string ToString() => Display;
     }
+
+    private int _infoSeq;
 
     public MainWindow()
     {
@@ -64,7 +67,7 @@ public partial class MainWindow : Window
         _adb = new AdbService(_settings.ScrcpyDir);
         if (string.IsNullOrEmpty(_settings.ScrcpyDir))
         {
-            AppendLog(Loc.T("⚠ 未找到 scrcpy 目录，请在「设备」页手动选择"));
+            AppendLog(Loc.T("⚠ 未找到 scrcpy 目录，请在「设置」页手动选择"));
             try
             {
                 File.AppendAllText(Path.Combine(GetAppDir(), "startup.log"),
@@ -168,6 +171,9 @@ public partial class MainWindow : Window
         var navs = new[] { Nav0, Nav1, Nav2, Nav3 };
         for (int i = 0; i < navs.Length; i++)
             navs[i].Tag = i == idx ? "active" : null;
+
+        if (idx == 0 && CmbDevice.SelectedItem is DeviceItem d)
+            _ = RefreshDeviceInfoAsync(d);
     }
 
     // ---------------- 设置读写 ----------------
@@ -311,6 +317,7 @@ public partial class MainWindow : Window
             var items = devices.Select(d => new DeviceItem
             {
                 Serial = d.serial,
+                State = d.state,
                 Display = $"{d.serial}  ({(string.IsNullOrEmpty(d.model) ? d.state : d.model)})"
             }).ToList();
 
@@ -329,6 +336,9 @@ public partial class MainWindow : Window
                 {
                     LblStatus.Text = Loc.T("未发现设备");
                 }
+                _infoSeq++;
+                ShowDeviceInfoEmpty(Loc.T("未发现设备"));
+                SetAdbBadge("");
             }
             else
             {
@@ -349,6 +359,160 @@ public partial class MainWindow : Window
             BtnRefresh.IsEnabled = true;
         }
         return count;
+    }
+
+﻿    private async void CmbDevice_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (CmbDevice.SelectedItem is DeviceItem d)
+        {
+            _settings.LastSerial = d.Serial;
+            await RefreshDeviceInfoAsync(d);
+        }
+        else if (CmbDevice.ItemsSource == null)
+        {
+            ShowDeviceInfoEmpty(Loc.T("选择设备后显示基础信息"));
+            SetAdbBadge("");
+        }
+    }
+
+    private async void BtnRefreshInfo_Click(object sender, RoutedEventArgs e)
+    {
+        if (CmbDevice.SelectedItem is DeviceItem d)
+            await RefreshDeviceInfoAsync(d);
+        else
+            ShowDeviceInfoEmpty(Loc.T("请先选择设备"));
+    }
+
+    private async Task RefreshDeviceInfoAsync(DeviceItem d)
+    {
+        int seq = ++_infoSeq;
+        BtnRefreshInfo.IsEnabled = false;
+        SetAdbBadge(d.State);
+        LblInfoEmpty.Text = Loc.T("正在读取设备信息…");
+        LblInfoEmpty.Visibility = Visibility.Visible;
+        GrdDeviceInfo.Visibility = Visibility.Collapsed;
+
+        DeviceInfo info;
+        try
+        {
+            info = await Task.Run(() => new DeviceInfoService(_adb).Get(d.Serial, d.State));
+        }
+        catch (Exception ex)
+        {
+            info = new DeviceInfo { Serial = d.Serial, State = d.State, Error = ex.Message };
+        }
+
+        if (seq != _infoSeq) return;
+
+        BtnRefreshInfo.IsEnabled = true;
+        SetAdbBadge(d.State);
+        ApplyDeviceInfo(info, d);
+    }
+
+    private void ApplyDeviceInfo(DeviceInfo info, DeviceItem d)
+    {
+        if (string.Equals(d.State, "unauthorized", StringComparison.OrdinalIgnoreCase))
+        {
+            ShowDeviceInfoEmpty(Loc.T("设备未授权，请在手机上允许 USB 调试"));
+            return;
+        }
+        if (string.Equals(d.State, "offline", StringComparison.OrdinalIgnoreCase))
+        {
+            ShowDeviceInfoEmpty(Loc.T("设备当前离线，请重新连接"));
+            return;
+        }
+        if (string.Equals(d.State, "device", StringComparison.OrdinalIgnoreCase) && string.IsNullOrEmpty(info.Name) &&
+            string.IsNullOrEmpty(info.Model) && info.ScreenWidth == 0)
+        {
+            ShowDeviceInfoEmpty(string.IsNullOrWhiteSpace(info.Error)
+                ? Loc.T("无法读取设备信息")
+                : Loc.F("读取设备信息失败：{0}", info.Error));
+            return;
+        }
+
+        LblInfoEmpty.Visibility = Visibility.Collapsed;
+        GrdDeviceInfo.Visibility = Visibility.Visible;
+
+        LblInfoName.Text = Dash(info.Name);
+        LblInfoModel.Text = Dash(info.Model);
+        LblInfoAndroid.Text = !string.IsNullOrEmpty(info.AndroidVersion)
+            ? (string.IsNullOrEmpty(info.Sdk)
+                ? $"Android {info.AndroidVersion}"
+                : $"Android {info.AndroidVersion} (API {info.Sdk})")
+            : "—";
+        LblInfoConn.Text = info.IsWireless ? Loc.T("无线") : "USB";
+        LblInfoRam.Text = info.RamTotalKb > 0
+            ? Loc.F("已用 {0} / {1} GB", Gb(info.RamUsedKb), Gb(info.RamTotalKb))
+            : "—";
+        LblInfoStorage.Text = info.StorageTotalKb > 0
+            ? Loc.F("已用 {0} / {1} GB", Gb(info.StorageUsedKb), Gb(info.StorageTotalKb))
+            : "—";
+        LblInfoScreen.Text = info.ScreenWidth > 0
+            ? $"{info.ScreenWidth}×{info.ScreenHeight}" + (info.Density > 0 ? $" · {info.Density} dpi" : "")
+            : "—";
+        LblInfoInch.Text = info.ScreenInches > 0 ? Loc.F("{0:0.0} 英寸", info.ScreenInches) : "—";
+        LblInfoBattery.Text = info.BatteryLevel >= 0
+            ? $"{info.BatteryLevel}%" +
+              (info.BatteryTemperatureTenths != int.MinValue
+                  ? $" · {info.BatteryTemperatureTenths / 10.0:0.0}°C" : "") +
+              (string.IsNullOrEmpty(info.BatteryStatus) ? "" : $" · {BatteryStatusText(info.BatteryStatus)}")
+            : "—";
+        LblInfoCpu.Text = string.IsNullOrWhiteSpace(info.Soc)
+            ? Dash(info.Abi)
+            : $"{info.Soc} · {Dash(info.Abi)}";
+        LblInfoIp.Text = Dash(info.WifiIp);
+        LblInfoUptime.Text = FormatUptime(info.UptimeSeconds);
+    }
+
+    private static string Dash(string value) => string.IsNullOrWhiteSpace(value) || value == "null" ? "—" : value;
+
+    private static string Gb(long kb) => (kb / 1024.0 / 1024.0).ToString("0.0");
+
+    private static string BatteryStatusText(string status) => status switch
+    {
+        "1" => Loc.T("未知状态"),
+        "2" => Loc.T("充电中"),
+        "3" => Loc.T("放电中"),
+        "4" => Loc.T("未充电"),
+        "5" => Loc.T("已充满"),
+        _ => Loc.T("未知状态")
+    };
+
+    private static string FormatUptime(double seconds)
+    {
+        if (seconds <= 0) return "—";
+        var t = TimeSpan.FromSeconds(seconds);
+        if (t.TotalDays >= 1) return Loc.F("{0} 天 {1} 小时", (int)t.TotalDays, t.Hours);
+        if (t.TotalHours >= 1) return Loc.F("{0} 小时 {1} 分钟", (int)t.TotalHours, t.Minutes);
+        return Loc.F("{0} 分钟", Math.Max(1, t.Minutes));
+    }
+
+    private void ShowDeviceInfoEmpty(string message)
+    {
+        if (LblInfoEmpty == null) return;
+        LblInfoEmpty.Text = message;
+        LblInfoEmpty.Visibility = Visibility.Visible;
+        GrdDeviceInfo.Visibility = Visibility.Collapsed;
+    }
+
+    private void SetAdbBadge(string state)
+    {
+        if (BdAdbState == null || LblAdbState == null) return;
+        string text, fg, bg;
+        switch ((state ?? "").ToLowerInvariant())
+        {
+            case "device":
+                text = Loc.T("已授权"); fg = "#34C759"; bg = "#2034C759"; break;
+            case "unauthorized":
+                text = Loc.T("未授权"); fg = "#FFD60A"; bg = "#20FFD60A"; break;
+            case "offline":
+                text = Loc.T("离线"); fg = "#FF453A"; bg = "#20FF453A"; break;
+            default:
+                text = Loc.T("未知"); fg = "#8B95A7"; bg = "#2A2B30"; break;
+        }
+        LblAdbState.Text = text;
+        LblAdbState.Foreground = (Brush)new BrushConverter().ConvertFromString(fg);
+        BdAdbState.Background = (Brush)new BrushConverter().ConvertFromString(bg);
     }
 
     private async void BtnRefresh_Click(object sender, RoutedEventArgs e)

@@ -400,31 +400,113 @@
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
-                                    <ComboBox x:Name="CmbDevice" Style="{StaticResource DarkCombo}" Height="34"/>
+                                    <ComboBox x:Name="CmbDevice" Style="{StaticResource DarkCombo}" Height="34" SelectionChanged="CmbDevice_SelectionChanged"/>
                                     <Button Grid.Column="1" x:Name="BtnRefresh" Content="{Binding [刷新], Source={x:Static loc:Loc.Instance}}" Width="56" Height="34"
                                             Margin="8,0,0,0" Style="{StaticResource GhostButton}" Click="BtnRefresh_Click"/>
                                 </Grid>
                             </StackPanel>
                         </Border>
 
+
                         <Border Style="{StaticResource Card}">
                             <StackPanel>
-                                <TextBlock Text="{Binding [scrcpy 目录], Source={x:Static loc:Loc.Instance}}" Style="{StaticResource SectionTitle}"/>
                                 <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-                                    <Border Background="#1B1C20" BorderBrush="{StaticResource CardBorderBrush}"
-                                            BorderThickness="1" CornerRadius="8" Height="34" Padding="9,0">
-                                        <TextBlock x:Name="TxtScrcpyDir" Text="…" Foreground="{StaticResource MutedBrush}"
-                                                   FontSize="11.5" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
-                                    </Border>
-                                    <Button Grid.Column="1" AutomationProperties.Name="选择 scrcpy 目录" Content="{Binding [选择], Source={x:Static loc:Loc.Instance}}" Width="56" Height="34" Margin="8,0,0,0"
-                                            Style="{StaticResource GhostButton}" Click="BtnPickScrcpy_Click"/>
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="{Binding [设备信息], Source={x:Static loc:Loc.Instance}}" Style="{StaticResource SectionTitle}"/>
+                                        <Border x:Name="BdAdbState" Background="#2A2B30" CornerRadius="9" Padding="8,2" Margin="8,0,0,0" VerticalAlignment="Center">
+                                            <TextBlock x:Name="LblAdbState" Text="{Binding [未知], Source={x:Static loc:Loc.Instance}}" Foreground="{StaticResource MutedBrush}" FontSize="10.5"/>
+                                        </Border>
+                                    </StackPanel>
+                                    <Button x:Name="BtnRefreshInfo" Content="{Binding [刷新信息], Source={x:Static loc:Loc.Instance}}" Width="76" Height="28"
+                                            HorizontalAlignment="Right" Style="{StaticResource GhostButton}" Click="BtnRefreshInfo_Click"/>
+                                </Grid>
+                                <TextBlock x:Name="LblInfoEmpty" Text="{Binding [选择设备后显示基础信息], Source={x:Static loc:Loc.Instance}}"
+                                           Style="{StaticResource Hint}" TextWrapping="Wrap" Margin="0,10,0,2"/>
+                                <Grid x:Name="GrdDeviceInfo" Visibility="Collapsed" Margin="0,10,0,2">
+                                    <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <Grid Grid.Row="0" Margin="0,0,0,7">
+                                        <Grid.ColumnDefinitions><ColumnDefinition Width="86"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                        <TextBlock Text="{Binding [设备名称], Source={x:Static loc:Loc.Instance}}" Style="{StaticResource Hint}" VerticalAlignment="Center"/>
+                                        <TextBlock x:Name="LblInfoName" Grid.Column="1" Text="—" Foreground="{StaticResource TextBrush}" FontSize="12" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                                    </Grid>
+                                    <Grid Grid.Row="1" Margin="0,0,0,7">
+                                        <Grid.ColumnDefinitions><ColumnDefinition Width="86"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                        <TextBlock Text="{Binding [型号], Source={x:Static loc:Loc.Instance}}" Style="{StaticResource Hint}" VerticalAlignment="Center"/>
+                                        <TextBlock x:Name="LblInfoModel" Grid.Column="1" Text="—" Foreground="{StaticResource TextBrush}" FontSize="12" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                                    </Grid>
+                                    <Grid Grid.Row="2" Margin="0,0,0,7">
+                                        <Grid.ColumnDefinitions><ColumnDefinition Width="86"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                        <TextBlock Text="{Binding [系统], Source={x:Static loc:Loc.Instance}}" Style="{StaticResource Hint}" VerticalAlignment="Center"/>
+                                        <TextBlock x:Name="LblInfoAndroid" Grid.Column="1" Text="—" Foreground="{StaticResource TextBrush}" FontSize="12" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                                    </Grid>
+                                    <Grid Grid.Row="3" Margin="0,0,0,7">
+                                        <Grid.ColumnDefinitions><ColumnDefinition Width="86"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                        <TextBlock Text="{Binding [连接方式], Source={x:Static loc:Loc.Instance}}" Style="{StaticResource Hint}" VerticalAlignment="Center"/>
+                                        <TextBlock x:Name="LblInfoConn" Grid.Column="1" Text="—" Foreground="{StaticResource TextBrush}" FontSize="12" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                                    </Grid>
+                                    <Grid Grid.Row="4" Margin="0,0,0,7">
+                                        <Grid.ColumnDefinitions><ColumnDefinition Width="86"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                        <TextBlock Text="{Binding [内存], Source={x:Static loc:Loc.Instance}}" Style="{StaticResource Hint}" VerticalAlignment="Center"/>
+                                        <TextBlock x:Name="LblInfoRam" Grid.Column="1" Text="—" Foreground="{StaticResource TextBrush}" FontSize="12" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                                    </Grid>
+                                    <Grid Grid.Row="5" Margin="0,0,0,7">
+                                        <Grid.ColumnDefinitions><ColumnDefinition Width="86"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                        <TextBlock Text="{Binding [存储], Source={x:Static loc:Loc.Instance}}" Style="{StaticResource Hint}" VerticalAlignment="Center"/>
+                                        <TextBlock x:Name="LblInfoStorage" Grid.Column="1" Text="—" Foreground="{StaticResource TextBrush}" FontSize="12" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                                    </Grid>
+                                    <Grid Grid.Row="6" Margin="0,0,0,7">
+                                        <Grid.ColumnDefinitions><ColumnDefinition Width="86"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                        <TextBlock Text="{Binding [屏幕分辨率], Source={x:Static loc:Loc.Instance}}" Style="{StaticResource Hint}" VerticalAlignment="Center"/>
+                                        <TextBlock x:Name="LblInfoScreen" Grid.Column="1" Text="—" Foreground="{StaticResource TextBrush}" FontSize="12" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                                    </Grid>
+                                    <Grid Grid.Row="7" Margin="0,0,0,7">
+                                        <Grid.ColumnDefinitions><ColumnDefinition Width="86"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                        <TextBlock Text="{Binding [屏幕尺寸], Source={x:Static loc:Loc.Instance}}" Style="{StaticResource Hint}" VerticalAlignment="Center"/>
+                                        <TextBlock x:Name="LblInfoInch" Grid.Column="1" Text="—" Foreground="{StaticResource TextBrush}" FontSize="12" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                                    </Grid>
+                                    <Grid Grid.Row="8" Margin="0,0,0,7">
+                                        <Grid.ColumnDefinitions><ColumnDefinition Width="86"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                        <TextBlock Text="{Binding [电池], Source={x:Static loc:Loc.Instance}}" Style="{StaticResource Hint}" VerticalAlignment="Center"/>
+                                        <TextBlock x:Name="LblInfoBattery" Grid.Column="1" Text="—" Foreground="{StaticResource TextBrush}" FontSize="12" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                                    </Grid>
+                                    <Grid Grid.Row="9" Margin="0,0,0,7">
+                                        <Grid.ColumnDefinitions><ColumnDefinition Width="86"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                        <TextBlock Text="{Binding [处理器], Source={x:Static loc:Loc.Instance}}" Style="{StaticResource Hint}" VerticalAlignment="Center"/>
+                                        <TextBlock x:Name="LblInfoCpu" Grid.Column="1" Text="—" Foreground="{StaticResource TextBrush}" FontSize="12" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                                    </Grid>
+                                    <Grid Grid.Row="10" Margin="0,0,0,7">
+                                        <Grid.ColumnDefinitions><ColumnDefinition Width="86"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                        <TextBlock Text="{Binding [WiFi IP], Source={x:Static loc:Loc.Instance}}" Style="{StaticResource Hint}" VerticalAlignment="Center"/>
+                                        <TextBlock x:Name="LblInfoIp" Grid.Column="1" Text="—" Foreground="{StaticResource TextBrush}" FontSize="12" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                                    </Grid>
+                                    <Grid Grid.Row="11" Margin="0,0,0,7">
+                                        <Grid.ColumnDefinitions><ColumnDefinition Width="86"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                        <TextBlock Text="{Binding [运行时间], Source={x:Static loc:Loc.Instance}}" Style="{StaticResource Hint}" VerticalAlignment="Center"/>
+                                        <TextBlock x:Name="LblInfoUptime" Grid.Column="1" Text="—" Foreground="{StaticResource TextBrush}" FontSize="12" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                                    </Grid>
                                 </Grid>
                             </StackPanel>
                         </Border>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <!-- ========== 画面 ========== -->
+                <ScrollViewer x:Name="PageDisplay" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <TextBlock Text="{Binding [投屏], Source={x:Static loc:Loc.Instance}}" FontSize="21" FontWeight="Bold" Foreground="{StaticResource TextBrush}" Margin="2,0,0,12"/>
 
                         <Border Style="{StaticResource Card}">
                             <StackPanel>
@@ -520,18 +602,10 @@
                                 </StackPanel>
                             </StackPanel>
                         </Border>
-                    </StackPanel>
-                </ScrollViewer>
-
-                <!-- ========== 画面 ========== -->
-                <ScrollViewer x:Name="PageDisplay" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
-                    <StackPanel>
-                        <TextBlock Text="{Binding [投屏], Source={x:Static loc:Loc.Instance}}" FontSize="21" FontWeight="Bold" Foreground="{StaticResource TextBrush}" Margin="2,0,0,12"/>
 
 
-                        <TextBlock Text="{Binding [投屏], Source={x:Static loc:Loc.Instance}}" Style="{StaticResource SectionTitle}" Margin="2,6,0,8"/>
 
-                        <Border Style="{StaticResource Card}">
+                                                <Border Style="{StaticResource Card}">
                             <StackPanel>
                                 <TextBlock Text="{Binding [投屏模式], Source={x:Static loc:Loc.Instance}}" Style="{StaticResource SectionTitle}"/>
                                 <UniformGrid Columns="2" Margin="0,2,0,0">
@@ -621,6 +695,24 @@
                 <ScrollViewer x:Name="PageSettings" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
                     <StackPanel>
                         <TextBlock Text="{Binding [设置], Source={x:Static loc:Loc.Instance}}" FontSize="21" FontWeight="Bold" Foreground="{StaticResource TextBrush}" Margin="2,0,0,12"/>
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="{Binding [scrcpy 目录], Source={x:Static loc:Loc.Instance}}" Style="{StaticResource SectionTitle}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Border Background="#1B1C20" BorderBrush="{StaticResource CardBorderBrush}"
+                                            BorderThickness="1" CornerRadius="8" Height="34" Padding="9,0">
+                                        <TextBlock x:Name="TxtScrcpyDir" Text="…" Foreground="{StaticResource MutedBrush}"
+                                                   FontSize="11.5" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                    </Border>
+                                    <Button Grid.Column="1" AutomationProperties.Name="选择 scrcpy 目录" Content="{Binding [选择], Source={x:Static loc:Loc.Instance}}" Width="56" Height="34" Margin="8,0,0,0"
+                                            Style="{StaticResource GhostButton}" Click="BtnPickScrcpy_Click"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
                         <Border Style="{StaticResource Card}">
                             <StackPanel>
                                 <Grid>

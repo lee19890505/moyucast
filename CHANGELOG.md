@@ -2,11 +2,43 @@
 
 本项目遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 风格，版本号遵循语义化版本。
 
-## [Unreleased]
+## [v1.3.1] - 2026-11-03
+
+### 新增
+
+- **设备信息卡**：设备页选中设备后自动读取并展示
+  - 设备名称、型号、Android 版本、ADB 授权状态、USB / 无线连接方式
+  - 内存、存储的已用 / 总量
+  - 屏幕分辨率、dpi、估算屏幕英寸
+  - 电池电量、温度、充电状态
+  - 处理器（SoC / ABI）、WiFi IP、运行时间
+  - 单次 `adb shell` 批量读取，不阻塞界面；失败项显示 `—`，未授权 / 离线给出明确提示
+- 设备信息卡支持手动「刷新信息」
+
+### 变更
+
+- **无线投屏设置从「设备」页移到「投屏」页顶部**，作为投屏前的连接入口
+- **scrcpy 目录设置从「设备」页移到「设置」页**
+- 删掉投屏页重复的「投屏」小标题
 
 ### 修复
 
 - **滚动条样式**：替换 WPF 默认浅色滚动条为深色细滚动条（圆角滑块、悬停高亮），与深色主题统一
+
+### English summary
+
+**Added**
+- Device info card on the Device tab: name, model, Android version, ADB state, connection type, RAM, storage, resolution/dpi/screen inches, battery, SoC/ABI, Wi-Fi IP and uptime
+- One batched `adb shell` call, with graceful `—` fallbacks and clear unauthorized/offline messages
+- Manual "Refresh info" button
+
+**Changed**
+- Wireless mirroring settings moved to the top of the Mirroring tab
+- scrcpy folder setting moved to the Settings tab
+- Removed the duplicate "Mirroring" heading
+
+**Fixed**
+- Dark slim scrollbars replacing the default light WPF style
 
 
 ## [v1.3.0] - 2026-10-28

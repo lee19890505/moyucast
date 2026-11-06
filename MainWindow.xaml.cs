@@ -30,6 +30,8 @@ public partial class MainWindow : Window
 
     private IntPtr _scrcpyHwnd = IntPtr.Zero;
     private double _videoAspect = 0;
+    /// <summary>当前正在运行的投屏模式；用于停止/异常退出时仍按旧模式保存几何。</summary>
+    private string _activeMode = "";
     private bool _syncing = true;
     private string _activeSerial = "";
 
@@ -186,6 +188,7 @@ public partial class MainWindow : Window
         TxtIp.Text = _settings.LastWirelessIp;
         ChkLockAspect.IsChecked = _settings.LockAspect;
         ChkTop.IsChecked = _settings.AlwaysOnTop;
+        ChkAutoLockOnStart.IsChecked = _settings.AutoLockOnStart;
         ChkUhid.IsChecked = _settings.KeyboardUhid;
         ChkDisableIme.IsChecked = _settings.DisablePcIme;
         ChkAutoHide.IsChecked = _settings.AutoHideOnLeave;
@@ -216,6 +219,7 @@ public partial class MainWindow : Window
         _settings.LastWirelessIp = TxtIp.Text.Trim();
         _settings.LockAspect = ChkLockAspect.IsChecked == true;
         _settings.AlwaysOnTop = ChkTop.IsChecked == true;
+        _settings.AutoLockOnStart = ChkAutoLockOnStart.IsChecked == true;
         _settings.KeyboardUhid = ChkUhid.IsChecked == true;
         _settings.DisablePcIme = ChkDisableIme.IsChecked == true;
         _settings.AutoHideOnLeave = ChkAutoHide.IsChecked == true;
@@ -780,12 +784,15 @@ public partial class MainWindow : Window
                 AppendLog(Loc.T("锁屏模式下需要先解锁手机，才能启动 App"));
                 return;
             }
-            ApplyStayOn(serial);
+            if (_settings.AutoLockOnStart)
+                ApplyStayOn(serial);
         }
 
         SaveUiToSettings();
         _settings.Save();
         _activeSerial = serial;
+        _activeMode = _settings.DisplayMode;
+        _mirrorRectApplied = false;
 
         // 新开投屏：重置鼠标判定状态，给窗口落位时间（虚拟屏创建更慢，给 5 秒）
         _hasLastHoverRect = false;
@@ -816,10 +823,18 @@ public partial class MainWindow : Window
 
             if (_settings.DisplayMode == "lock")
             {
-                await Task.Delay(2500);
-                _adb.Run($"-s {serial} shell input keyevent 26");
-                LblStatus.Text = Loc.T("已锁屏（投屏中）");
-                AppendLog(Loc.T("已发送锁屏命令，物理屏已关闭，投屏保持运行"));
+                if (_settings.AutoLockOnStart)
+                {
+                    await Task.Delay(2500);
+                    _adb.Run($"-s {serial} shell input keyevent 26");
+                    LblStatus.Text = Loc.T("已锁屏（投屏中）");
+                    AppendLog(Loc.T("已发送锁屏命令，物理屏已关闭，投屏保持运行"));
+                }
+                else
+                {
+                    LblStatus.Text = Loc.T("投屏中（未自动锁屏，保持手机设置）");
+                    AppendLog(Loc.T("已按设置跳过自动锁屏，手机保持原亮屏/息屏设置"));
+                }
             }
         }
         catch (Exception ex)
@@ -847,11 +862,14 @@ public partial class MainWindow : Window
 
     private void StopMirroring(string status)
     {
+        SaveCurrentMirrorGeometry();
+        _settings.Save();
         RestoreStayOn();
         _runner.Stop();
         _scrcpyHwnd = IntPtr.Zero;
         _videoAspect = 0;
         _mirrorRectApplied = false;
+        _activeMode = "";
         BtnStart.Content = Loc.T("开始投屏");
         UpdateTrayText();
         LblStatus.Text = status;
@@ -862,12 +880,26 @@ public partial class MainWindow : Window
         Dispatcher.Invoke(() =>
         {
             if (_restartingMirror) return;   // 主动重启（如音频切换）时忽略旧进程退出
+
+            SaveCurrentMirrorGeometry();
+            _settings.Save();
+
+            // 如果是因为设备断开/进程异常退出，而主窗口正被老板键隐藏，则恢复主窗口。
+            // 进入老板键前本来就在托盘的话，保持托盘隐藏。
+            ExitBossModeAfterSessionEnd();
+
             _scrcpyHwnd = IntPtr.Zero;
             _videoAspect = 0;
+            _mirrorRectApplied = false;
+            _activeMode = "";
+            _autoHideArmed = false;
+            _outsideSince = DateTime.MinValue;
+            _autoHideSuppressUntil = DateTime.UtcNow.AddMilliseconds(1500);
+
             BtnStart.Content = Loc.T("开始投屏");
             UpdateTrayText();
             LblStatus.Text = Loc.F("投屏已退出（{0}）", code);
-        RestoreStayOn();
+            RestoreStayOn();
         });
     }
 
@@ -1290,6 +1322,7 @@ public partial class MainWindow : Window
     private void HoverTimer_Tick(object sender, EventArgs e)
     {
         if (!_settings.AutoHideOnLeave) { _autoHideArmed = false; return; }
+        if (!_runner.IsRunning) return;
 
         EnsureBossStateConsistent();
         if (_bossHidden) return;
@@ -1692,6 +1725,68 @@ public partial class MainWindow : Window
         catch { }
     }
 
+    /// <summary>当前窗口位置对应的存储 key：镜像一份，锁屏按 App 分开。</summary>
+    private string CurrentGeometryKey()
+    {
+        var mode = string.IsNullOrEmpty(_activeMode) ? _settings.DisplayMode : _activeMode;
+        if (mode == "lock" && !string.IsNullOrWhiteSpace(_settings.LastLockApp))
+            return "lock:" + _settings.LastLockApp;
+        return "mirror";
+    }
+
+    /// <summary>在停止 / 异常退出 / 关闭前保存当前投屏窗口的位置和大小。</summary>
+    private void SaveCurrentMirrorGeometry()
+    {
+        try
+        {
+            var hwnd = _scrcpyHwnd;
+            if (hwnd == IntPtr.Zero || !NativeWin32.IsWindow(hwnd))
+                hwnd = EnsureScrcpyWindow();
+            if (hwnd == IntPtr.Zero || !NativeWin32.IsWindow(hwnd)) return;
+            if (!NativeWin32.GetWindowRect(hwnd, out var r)) return;
+
+            int w = r.Right - r.Left;
+            int h = r.Bottom - r.Top;
+            if (w <= 0 || h <= 0) return;
+
+            if (_settings.WindowRects == null) _settings.WindowRects = new();
+            _settings.WindowRects[CurrentGeometryKey()] = new WindowRect
+            {
+                Left = r.Left,
+                Top = r.Top,
+                Width = w,
+                Height = h
+            };
+        }
+        catch { }
+    }
+
+    /// <summary>投屏进程结束后退出老板键状态：原来在托盘则保持隐藏，否则恢复主窗口。</summary>
+    private void ExitBossModeAfterSessionEnd()
+    {
+        if (!_bossHidden) return;
+
+        if (!_bossMainWasHidden)
+        {
+            Show();
+            WindowState = WindowState.Normal;
+            Left = _bossMainLeft;
+            Top = _bossMainTop;
+            Width = SanitizeSize(_bossMainW, Width, 200, 4000);
+            Height = SanitizeSize(_bossMainH, Height, 300, 3000);
+            if (_bossMainState == WindowState.Maximized) WindowState = WindowState.Maximized;
+            else if (_bossMainState == WindowState.Minimized) WindowState = WindowState.Minimized;
+            Activate();
+        }
+
+        _bossHidden = false;
+        _autoHideArmed = false;
+        _outsideSince = DateTime.MinValue;
+        _autoHideSuppressUntil = DateTime.UtcNow.AddMilliseconds(1500);
+        _suppressAspectUntil = DateTime.UtcNow.AddMilliseconds(900);
+        AppendLog(Loc.T("投屏已退出，已恢复主窗口"));
+    }
+
     private void SaveGeometry()
     {
         try
@@ -1706,15 +1801,7 @@ public partial class MainWindow : Window
             }
             _settings.MainMaximized = WindowState == WindowState.Maximized;
 
-            if (_scrcpyHwnd != IntPtr.Zero && NativeWin32.IsWindow(_scrcpyHwnd) &&
-                NativeWin32.GetWindowRect(_scrcpyHwnd, out var r))
-            {
-                _settings.MirrorHasRect = true;
-                _settings.MirrorLeft = r.Left;
-                _settings.MirrorTop = r.Top;
-                _settings.MirrorWidth = r.Right - r.Left;
-                _settings.MirrorHeight = r.Bottom - r.Top;
-            }
+            SaveCurrentMirrorGeometry();
             _settings.Opacity = SldOpacity.Value / 100.0;
         }
         catch { }
@@ -1763,11 +1850,12 @@ public partial class MainWindow : Window
             {
                 _videoAspect = (double)cr.Right / cr.Bottom;
 
-                if (!_mirrorRectApplied && _settings.MirrorHasRect &&
-                    _settings.MirrorWidth > 0 && _settings.MirrorHeight > 0)
+                var geoKey = CurrentGeometryKey();
+                if (!_mirrorRectApplied && _settings.WindowRects != null &&
+                    _settings.WindowRects.TryGetValue(geoKey, out var rect) &&
+                    rect.Width > 0 && rect.Height > 0)
                 {
-                    NativeWin32.MoveResize(hwnd, _settings.MirrorLeft, _settings.MirrorTop,
-                        _settings.MirrorWidth, _settings.MirrorHeight);
+                    NativeWin32.MoveResize(hwnd, rect.Left, rect.Top, rect.Width, rect.Height);
                     _mirrorRectApplied = true;
                     AppendLog(Loc.T("已恢复上次的投屏窗口位置/大小"));
                 }

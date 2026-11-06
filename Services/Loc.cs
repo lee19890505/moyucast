@@ -289,6 +289,14 @@ public class Loc : INotifyPropertyChanged
         ["已加载 {0} 个可启动应用"] = "Loaded {0} launchable apps",
         ["已提取 {0} 个应用图标"] = "Extracted {0} app icons",
 
+        // ---------- 锁屏自动锁屏开关 / 恢复 ----------
+        ["锁屏投屏后自动锁屏"] = "Lock phone screen after starting",
+        ["开启：启动后发送电源键关闭手机物理屏。关闭：手机保持你原来的亮屏/息屏设置，不强制常亮，也不发送锁屏命令。"] =
+            "On: sends the power key to turn off the physical screen. Off: keeps your phone's own screen timeout settings; MoyuCast does not force stay-awake or send a lock command.",
+        ["投屏中（未自动锁屏，保持手机设置）"] = "Mirroring (auto-lock off, phone settings kept)",
+        ["已按设置跳过自动锁屏，手机保持原亮屏/息屏设置"] = "Auto-lock skipped; phone keeps its original screen timeout settings",
+        ["投屏已退出，已恢复主窗口"] = "Mirroring ended; main window restored",
+
         // ---------- 自动隐藏 / 诊断 ----------
         ["离开即隐藏（更灵敏）"] = "Hide as soon as you leave (more sensitive)",
         ["打开后无需先把鼠标移入投屏窗口：只要不在窗口上，持续 0.8 秒就隐藏。"] = "No need to move into the mirror window first: hides after the cursor has been outside it for 0.8 s.",

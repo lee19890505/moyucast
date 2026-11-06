@@ -2,6 +2,40 @@
 
 本项目遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 风格，版本号遵循语义化版本。
 
+## [v1.3.2] - 2026-11-06
+
+### 新增
+
+- **锁屏投屏后自动锁屏开关**（设置页）
+  - 默认开启，保持原有行为：启动后发送电源键关闭物理屏
+  - 关闭后不发送锁屏命令，也**不强制修改手机常亮设置**，完全保持手机自己的亮屏/息屏策略
+- 窗口位置改为按模式 / App 存储（`WindowRects`），为后续多窗口做准备
+  - `mirror`：镜像窗口
+  - `lock:<包名>`：锁屏窗口
+  - 旧版 `Mirror*` 配置自动迁移一次
+
+### 修复
+
+- 锁屏投屏窗口点「停止投屏」或 scrcpy 异常退出后，不保存位置和大小的问题
+- 拔掉手机 / scrcpy 退出时，如果自动隐藏正处于触发状态，主窗口会一直隐藏不恢复的问题
+- scrcpy 异常退出后 `_mirrorRectApplied` 未重置，导致下次启动不恢复位置
+- 切换投屏模式时，旧模式窗口几何可能被写到新模式 key 的问题
+
+### English summary
+
+**Added**
+- "Lock phone after starting" toggle for lock-screen mode
+  - On: sends the power key to turn off the physical screen (previous behaviour)
+  - Off: leaves the phone's own screen timeout / stay-awake settings untouched
+- Window geometry now stored per mode / app in `WindowRects`, ready for multi-window
+
+**Fixed**
+- Geometry was lost after pressing Stop or when scrcpy exited unexpectedly
+- Main window could stay hidden after auto-hide fired and the device was unplugged
+- Geometry was not restored after an unexpected scrcpy exit
+- Switching modes could write the old window geometry under the new mode key
+
+
 ## [v1.3.1] - 2026-11-03
 
 ### 新增

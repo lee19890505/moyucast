@@ -18,6 +18,8 @@ public class AppSettings
     public Dictionary<string, string> AppAliases { get; set; } = new();
     public bool LockAspect { get; set; } = true;
     public bool AlwaysOnTop { get; set; } = true;
+    /// <summary>锁屏投屏启动后是否自动发送电源键关闭物理屏</summary>
+    public bool AutoLockOnStart { get; set; } = true;
     public bool StayAwake { get; set; } = true;
     public bool Wireless { get; set; } = false;
     public double Opacity { get; set; } = 1.0;
@@ -49,6 +51,10 @@ public class AppSettings
     public double MainHeight { get; set; } = 760;
     public bool MainMaximized { get; set; } = false;
 
+    // ---- 窗口位置（按模式 / App 存，为多窗口做准备）----
+    public Dictionary<string, WindowRect> WindowRects { get; set; } = new();
+
+    // 旧字段仅用于迁移，新版本以 WindowRects 为准
     public bool MirrorHasRect { get; set; } = false;
     public int MirrorLeft { get; set; }
     public int MirrorTop { get; set; }
@@ -68,11 +74,34 @@ public class AppSettings
             {
                 var json = File.ReadAllText(FilePath);
                 var s = JsonSerializer.Deserialize<AppSettings>(json);
-                if (s != null) return s;
+                if (s != null)
+                {
+                    s.MigrateLegacyGeometry();
+                    return s;
+                }
             }
         }
         catch { }
         return new AppSettings();
+    }
+
+    /// <summary>旧版本只有一组 Mirror* 几何字段，迁移到按模式区分的字典。</summary>
+    private void MigrateLegacyGeometry()
+    {
+        if (WindowRects == null) WindowRects = new();
+        if (WindowRects.Count > 0) return;
+        if (!MirrorHasRect || MirrorWidth <= 0 || MirrorHeight <= 0) return;
+
+        var key = DisplayMode == "lock" && !string.IsNullOrWhiteSpace(LastLockApp)
+            ? "lock:" + LastLockApp
+            : "mirror";
+        WindowRects[key] = new WindowRect
+        {
+            Left = MirrorLeft,
+            Top = MirrorTop,
+            Width = MirrorWidth,
+            Height = MirrorHeight
+        };
     }
 
     public void Save()

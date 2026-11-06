@@ -716,6 +716,17 @@
                         <Border Style="{StaticResource Card}">
                             <StackPanel>
                                 <Grid>
+                                    <TextBlock Text="{Binding [锁屏投屏后自动锁屏], Source={x:Static loc:Loc.Instance}}" Style="{StaticResource Label}"/>
+                                    <CheckBox x:Name="ChkAutoLockOnStart" AutomationProperties.Name="锁屏投屏后自动锁屏" Style="{StaticResource ToggleSwitch}"
+                                              HorizontalAlignment="Right"/>
+                                </Grid>
+                                <TextBlock Style="{StaticResource Hint}" Margin="0,8,0,0" TextWrapping="Wrap"
+                                           Text="{Binding [开启：启动后发送电源键关闭手机物理屏。关闭：手机保持你原来的亮屏/息屏设置，不强制常亮，也不发送锁屏命令。], Source={x:Static loc:Loc.Instance}}"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <Grid>
                                     <TextBlock Text="{Binding [投屏窗口透明度], Source={x:Static loc:Loc.Instance}}" Style="{StaticResource Label}"/>
                                     <TextBlock x:Name="LblOpacity" Text="100%" Style="{StaticResource Hint}"
                                                HorizontalAlignment="Right" VerticalAlignment="Center"/>
